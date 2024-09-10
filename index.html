@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Graph with Selectable Nodes and Touch Support</title>
+    <title>3D Graph with Selectable Nodes and Touch + OrbitControls</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -45,6 +45,8 @@ scene.add(directionalLight);
 
 // OrbitControls for interaction
 let controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
 
 // Raycaster and mouse position for detecting clicks/touches
 let raycaster = new THREE.Raycaster();
@@ -111,8 +113,12 @@ function loadGraphData() {
 // Call the function to load the graph
 loadGraphData();
 
-// Function to handle node clicking (for both mouse and touch events)
+// Handle pointer down events for both mouse and touch
 function onPointerDown(event) {
+    if (event.touches && event.touches.length > 1) {
+        // If multi-touch, let OrbitControls handle it
+        return;
+    }
     event.preventDefault();
 
     let clientX, clientY;
