@@ -17,10 +17,9 @@ canvas {
     pointer-events: none; /* Makes the label unclickable */
 }
 
-.mode-button {
+.mode-button, .reset-button {
     position: absolute;
     top: 10px;
-    right: 10px;
     padding: 10px 15px;
     font-size: 16px;
     background-color: #333;
@@ -28,4 +27,28 @@ canvas {
     cursor: pointer;
     border: none;
     border-radius: 5px;
+}
+
+.mode-button {
+    right: 10px;
+}
+
+.reset-button {
+    right: 180px;
+}
+
+#labelListContainer {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 200px;
+    overflow-y: auto;
+}
+
+#labelList {
+    list-style-type: none;
+    padding: 0;
 }

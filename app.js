@@ -29,9 +29,19 @@ let mouse = new THREE.Vector2();
 let nodeMeshes = [];
 let labels = {};
 
+// Retrieve labeled nodes from localStorage
+let storedLabels = JSON.parse(localStorage.getItem('labeledNodes')) || {};
+for (let nodeId in storedLabels) {
+    let label = createLabel(storedLabels[nodeId]);
+    labels[nodeId] = label;
+    updateLabelList(nodeId, storedLabels[nodeId]);
+}
+
 // Mode variable to switch between 'transform' and 'select'
 let mode = 'transform';
 let modeButton = document.getElementById('modeButton');
+let resetButton = document.getElementById('resetButton');
+let labelList = document.getElementById('labelList');
 
 // Create a label container to hold all labels
 let labelContainer = document.createElement('div');
@@ -56,6 +66,13 @@ function updateLabelPosition(label, node) {
     let y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
 
     label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+}
+
+// Function to add a labeled node to the list in the UI
+function updateLabelList(nodeId, labelText) {
+    let li = document.createElement('li');
+    li.innerText = `Node ${nodeId}: ${labelText}`;
+    labelList.appendChild(li);
 }
 
 // Function to load graph data from a JSON file
@@ -115,10 +132,21 @@ function onSelectNode(event) {
                 let label = createLabel(labelText);
                 labels[clickedNode.id] = label;
             }
+
+            // Update label position and store the label in localStorage
             updateLabelPosition(labels[clickedNode.id], clickedNode);
+            storedLabels[clickedNode.id] = labelText;
+            localStorage.setItem('labeledNodes', JSON.stringify(storedLabels));
+            updateLabelList(clickedNode.id, labelText);
         }
     }
 }
+
+// Reset function to clear stored labels and refresh the page
+resetButton.addEventListener('click', () => {
+    localStorage.clear();
+    location.reload();
+});
 
 // Switch between 'transform' and 'select' modes
 modeButton.addEventListener('click', () => {
