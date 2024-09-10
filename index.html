@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Graph with Selectable Nodes</title>
+    <title>3D Graph with Selectable Nodes and Touch Support</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -46,7 +46,7 @@ scene.add(directionalLight);
 // OrbitControls for interaction
 let controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-// Raycaster and mouse position for detecting clicks
+// Raycaster and mouse position for detecting clicks/touches
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 
@@ -111,18 +111,29 @@ function loadGraphData() {
 // Call the function to load the graph
 loadGraphData();
 
-// Function to handle node clicking
-function onDocumentMouseDown(event) {
+// Function to handle node clicking (for both mouse and touch events)
+function onPointerDown(event) {
     event.preventDefault();
 
-    // Convert mouse position to normalized device coordinates
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    let clientX, clientY;
 
-    // Update the raycaster with the camera and mouse position
+    // Distinguish between touch and mouse events
+    if (event.touches) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+    } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
+
+    // Convert screen coordinates to normalized device coordinates
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+    // Update the raycaster with the camera and pointer position
     raycaster.setFromCamera(mouse, camera);
 
-    // Find intersections (clicked nodes)
+    // Find intersections (clicked/touched nodes)
     let intersects = raycaster.intersectObjects(nodeMeshes);
     
     if (intersects.length > 0) {
@@ -136,15 +147,16 @@ function onDocumentMouseDown(event) {
             if (labels[clickedNode.id]) {
                 labels[clickedNode.id].innerHTML = labelText;
             } else {
-                let label = createLabel(labelText, event.clientX, event.clientY);
+                let label = createLabel(labelText, clientX, clientY);
                 labels[clickedNode.id] = label;
             }
         }
     }
 }
 
-// Add event listener for mouse clicks
-document.addEventListener('mousedown', onDocumentMouseDown, false);
+// Add event listeners for both mouse and touch interactions
+document.addEventListener('mousedown', onPointerDown, false);
+document.addEventListener('touchstart', onPointerDown, false);
 
 // Render function
 function render() {
