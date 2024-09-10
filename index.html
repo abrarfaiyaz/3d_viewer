@@ -94,7 +94,7 @@ modeButton.addEventListener('click', () => {
 });
 
 // Function to create a label for a node
-function createLabel(text, x, y) {
+function createLabel(text) {
     let label = document.createElement('div');
     label.className = 'label';
     label.innerHTML = text;
@@ -192,9 +192,12 @@ function onTouchEnd(event) {
             if (labels[clickedNode.id]) {
                 labels[clickedNode.id].innerHTML = labelText;
             } else {
-                let label = createLabel(labelText, clientX, clientY);
+                let label = createLabel(labelText);
                 labels[clickedNode.id] = label;
             }
+
+            // Update label position immediately
+            updateLabelPosition(labels[clickedNode.id], clickedNode);
         }
     }
 }
