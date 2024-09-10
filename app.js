@@ -41,7 +41,7 @@ function createLabel(node, text) {
     
     labelContainer.linkWithMesh(labelPlane);
     labelPlane.isPickable = false;
-    return { labelPlane, labelContainer };  // Return both the label plane and the container
+    return { labelPlane, labelContainer };
 }
 
 function updateLabelList(nodeId, labelText) {
@@ -50,19 +50,29 @@ function updateLabelList(nodeId, labelText) {
     document.getElementById('labelList').appendChild(listItem);
 }
 
-// Create Nodes and Edges
-function createGraph() {
-    for (let i = 0; i < 10; i++) {
-        let node = BABYLON.MeshBuilder.CreateSphere(`node${i}`, { diameter: 1 }, scene);
-        node.position = new BABYLON.Vector3(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5);
-        nodeMeshes.push(node);
-    }
+// Function to load the graph data from the JSON file
+async function loadGraphData() {
+    try {
+        const response = await fetch('graph_data.json');
+        const data = await response.json();
 
-    // Create dummy edges for now
-    for (let i = 0; i < 9; i++) {
-        let line = BABYLON.MeshBuilder.CreateLines(`line${i}`, {
-            points: [nodeMeshes[i].position, nodeMeshes[i + 1].position]
-        }, scene);
+        // Create Nodes
+        data.nodes.forEach(nodeData => {
+            let node = BABYLON.MeshBuilder.CreateSphere(`node${nodeData.id}`, { diameter: 1 }, scene);
+            node.position = new BABYLON.Vector3(nodeData.x, nodeData.y, nodeData.z);
+            nodeMeshes.push(node);
+        });
+
+        // Create Edges (Lines)
+        data.edges.forEach(edgeData => {
+            let fromNode = nodeMeshes[edgeData.from];
+            let toNode = nodeMeshes[edgeData.to];
+            BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
+                points: [fromNode.position, toNode.position]
+            }, scene);
+        });
+    } catch (error) {
+        console.error("Error loading graph data:", error);
     }
 }
 
@@ -74,7 +84,6 @@ function onSelectNode() {
         let labelText = prompt("Enter label for this node:");
 
         if (labelText) {
-            // Check if there's an existing label, dispose it
             if (labels[clickedNode.id]) {
                 labels[clickedNode.id].labelPlane.dispose();
                 labels[clickedNode.id].labelContainer.dispose();
@@ -95,8 +104,8 @@ document.getElementById('resetButton').addEventListener('click', () => {
 
     // Dispose of all label planes and GUI elements
     for (let id in labels) {
-        labels[id].labelPlane.dispose();      // Dispose the 3D label plane
-        labels[id].labelContainer.dispose();  // Dispose the GUI container
+        labels[id].labelPlane.dispose();
+        labels[id].labelContainer.dispose();
     }
 
     // Clear the labels dictionary
@@ -124,8 +133,8 @@ window.addEventListener('resize', () => {
     engine.resize();
 });
 
-// Create graph and start rendering
-createGraph();
+// Load graph data and start rendering
+loadGraphData();
 engine.runRenderLoop(() => {
     scene.render();
 });
