@@ -29,6 +29,9 @@ let mouse = new THREE.Vector2();
 let nodeMeshes = [];
 let labels = {};
 
+// Load labels from localStorage (if they exist)
+let savedLabels = JSON.parse(localStorage.getItem('nodeLabels')) || {};
+
 // Mode variable to switch between 'transform' and 'select'
 let mode = 'transform';
 let modeButton = document.getElementById('modeButton');
@@ -67,6 +70,13 @@ function loadGraphData() {
                 sphere.position.copy(position);
                 scene.add(sphere);
                 nodeMeshes.push(sphere);  // Store the node mesh for raycasting
+
+                // Restore saved labels (if any)
+                if (savedLabels[sphere.id]) {
+                    let label = createLabel(savedLabels[sphere.id]);
+                    labels[sphere.id] = label;
+                    updateLabelPosition(label, sphere);
+                }
             });
 
             // Create edges
@@ -112,25 +122,15 @@ function onSelectNode(event) {
                 labels[clickedNode.id] = label;
             }
             updateLabelPosition(labels[clickedNode.id], clickedNode);
+
+            // Save label to localStorage
+            savedLabels[clickedNode.id] = labelText;
+            localStorage.setItem('nodeLabels', JSON.stringify(savedLabels));
         }
     }
 }
 
 // Switch between 'transform' and 'select' modes
-// modeButton.addEventListener('click', () => {
-//     if (mode === 'transform') {
-//         mode = 'select';
-//         controls.enabled = false;  // Disable OrbitControls in select mode
-//         modeButton.innerHTML = 'Switch to Transform Mode';
-//         document.addEventListener('mouseup', onSelectNode, false);  // Add node selection listener
-//     } else {
-//         mode = 'transform';
-//         controls.enabled = true;  // Enable OrbitControls in transform mode
-//         modeButton.innerHTML = 'Switch to Selection Mode';
-//         document.removeEventListener('mouseup', onSelectNode, false);  // Remove node selection listener
-//     }
-// });
-
 modeButton.addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
