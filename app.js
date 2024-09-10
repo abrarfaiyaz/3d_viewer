@@ -36,6 +36,9 @@ let modeButton = document.getElementById('modeButton');
 let resetButton = document.getElementById('resetButton');
 let labelList = document.getElementById('labelList');
 
+// Debugging information
+console.log("Selection Mode Initialized");
+
 // Function to create a 3D sprite label
 function createSpriteLabel(text) {
     let canvas = document.createElement('canvas');
@@ -126,6 +129,8 @@ function onSelectNode(event) {
     mouse.x = (clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
+    console.log("Mouse coordinates: ", mouse);  // Debugging: check the mouse coordinates
+
     // Update raycaster with camera and pointer position
     raycaster.setFromCamera(mouse, camera);
 
@@ -133,8 +138,9 @@ function onSelectNode(event) {
     let intersects = raycaster.intersectObjects(nodeMeshes);
     if (intersects.length > 0) {
         let clickedNode = intersects[0].object;
-        let labelText = prompt("Enter label for this node:");
+        console.log("Node Selected:", clickedNode);  // Debugging: check which node is selected
 
+        let labelText = prompt("Enter label for this node:");
         if (labelText) {
             if (labels[clickedNode.id]) {
                 scene.remove(labels[clickedNode.id]);  // Remove old label
@@ -148,6 +154,8 @@ function onSelectNode(event) {
             labeledNodesList[clickedNode.id] = labelText;
             updateLabelList(clickedNode.id, labelText);
         }
+    } else {
+        console.log("No node selected.");  // Debugging: No intersection found
     }
 }
 
