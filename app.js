@@ -41,7 +41,7 @@ function createLabel(node, text) {
     
     labelContainer.linkWithMesh(labelPlane);
     labelPlane.isPickable = false;
-    return labelPlane;
+    return { labelPlane, labelContainer };  // Return both the label plane and the container
 }
 
 function updateLabelList(nodeId, labelText) {
@@ -74,15 +74,39 @@ function onSelectNode() {
         let labelText = prompt("Enter label for this node:");
 
         if (labelText) {
-            let labelPlane = createLabel(clickedNode, labelText);
-            labels[clickedNode.id] = labelPlane;
+            // Check if there's an existing label, dispose it
+            if (labels[clickedNode.id]) {
+                labels[clickedNode.id].labelPlane.dispose();
+                labels[clickedNode.id].labelContainer.dispose();
+            }
+
+            // Create and store the new label
+            let label = createLabel(clickedNode, labelText);
+            labels[clickedNode.id] = label;
             labeledNodesList[clickedNode.id] = labelText;
             updateLabelList(clickedNode.id, labelText);
         }
     }
 }
 
-// Mode and Reset Buttons
+// Reset Button Functionality: Properly dispose labels and reset the state
+document.getElementById('resetButton').addEventListener('click', () => {
+    labeledNodesList = {};
+
+    // Dispose of all label planes and GUI elements
+    for (let id in labels) {
+        labels[id].labelPlane.dispose();      // Dispose the 3D label plane
+        labels[id].labelContainer.dispose();  // Dispose the GUI container
+    }
+
+    // Clear the labels dictionary
+    labels = {};
+
+    // Clear the label list in the UI
+    document.getElementById('labelList').innerHTML = '';
+});
+
+// Mode Switch Button
 document.getElementById('modeButton').addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
@@ -93,14 +117,6 @@ document.getElementById('modeButton').addEventListener('click', () => {
         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
         scene.onPointerDown = null;
     }
-});
-
-document.getElementById('resetButton').addEventListener('click', () => {
-    labeledNodesList = {};
-    for (let id in labels) {
-        labels[id].dispose();
-    }
-    document.getElementById('labelList').innerHTML = '';
 });
 
 // Resize event handler to keep canvas responsive
