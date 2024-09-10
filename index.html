@@ -14,7 +14,7 @@
             border-radius: 3px;
             border: 1px solid #000;
             font-size: 12px;
-            pointer-events: none;
+            pointer-events: none;  /* Makes the label unclickable */
         }
         .mode-button {
             position: absolute;
@@ -82,12 +82,14 @@ document.body.appendChild(modeButton);
 modeButton.addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
-        controls.enabled = false;
+        controls.enabled = false;  // Disable OrbitControls in select mode
         modeButton.innerHTML = 'Switch to Transform Mode';
+        document.addEventListener('mouseup', onTouchEnd, false);  // Add node selection listener
     } else {
         mode = 'transform';
-        controls.enabled = true;
+        controls.enabled = true;  // Enable OrbitControls in transform mode
         modeButton.innerHTML = 'Switch to Selection Mode';
+        document.removeEventListener('mouseup', onTouchEnd, false);  // Remove node selection listener
     }
 });
 
@@ -198,10 +200,6 @@ function onTouchEnd(event) {
         }
     }
 }
-
-// Add event listeners for node selection on mouse and touch
-document.addEventListener('mouseup', onTouchEnd, false);  // Handle mouse click
-document.addEventListener('touchend', onTouchEnd, false);  // Handle single tap
 
 // Render function
 function render() {
