@@ -36,11 +36,6 @@ let modeButton = document.getElementById('modeButton');
 let resetButton = document.getElementById('resetButton');
 let labelList = document.getElementById('labelList');
 
-// Create a label container to hold all labels
-let labelContainer = document.createElement('div');
-labelContainer.className = 'label-container';
-document.body.appendChild(labelContainer);
-
 // Function to create a 3D sprite label
 function createSpriteLabel(text) {
     let canvas = document.createElement('canvas');
