@@ -15,14 +15,24 @@
 // Initialize the Three.js scene
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-let renderer = new THREE.WebGLRenderer();
+let renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Lighting
-let light = new THREE.PointLight(0xFFFFFF, 1);
-light.position.set(50, 50, 50);
-scene.add(light);
+// Lighting to illuminate the scene
+let ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft white ambient light
+scene.add(ambientLight);
+
+let pointLight = new THREE.PointLight(0xFFFFFF, 1);
+pointLight.position.set(50, 50, 50);
+scene.add(pointLight);
+
+// Resize handling
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 // Function to load artery data from JSON file
 fetch('artery_data.json')
@@ -52,9 +62,10 @@ fetch('artery_data.json')
 
                 // Create a line connecting the two points
                 let lineMaterial = new THREE.LineBasicMaterial({color: 0x0000FF});
-                let lineGeometry = new THREE.Geometry();
-                lineGeometry.vertices.push(new THREE.Vector3(x1, y1, z1));
-                lineGeometry.vertices.push(new THREE.Vector3(x2, y2, z2));
+                let lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x1, y1, z1),
+                    new THREE.Vector3(x2, y2, z2)
+                ]);
                 let line = new THREE.Line(lineGeometry, lineMaterial);
                 scene.add(line);
             }
@@ -63,15 +74,16 @@ fetch('artery_data.json')
     .catch(error => console.error('Error loading artery data:', error));
 
 // Set camera position and render the scene
-camera.position.z = 100;
+camera.position.set(0, 0, 10);  // Adjust camera position
 
+// Controls to rotate the scene (optional)
+let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+// Animation loop to render the scene
 let animate = function () {
     requestAnimationFrame(animate);
 
-    // Rotate the scene for better visualization
-    scene.rotation.x += 0.01;
-    scene.rotation.y += 0.01;
-
+    controls.update();  // Update the orbit controls
     renderer.render(scene, camera);
 };
 
