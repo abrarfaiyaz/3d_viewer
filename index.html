@@ -51,7 +51,7 @@ window.addEventListener('resize', () => {
 });
 
 // Function to load artery data from JSON file
-fetch('artery_data.json')
+fetch('./artery_data.json')
     .then(response => response.json())
     .then(data => {
         let coord3d = data.coord3d;  // 3D coordinates of artery tracings
