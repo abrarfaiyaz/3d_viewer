@@ -29,14 +29,6 @@ let mouse = new THREE.Vector2();
 let nodeMeshes = [];
 let labels = {};
 
-// Retrieve labeled nodes from localStorage
-let storedLabels = JSON.parse(localStorage.getItem('labeledNodes')) || {};
-for (let nodeId in storedLabels) {
-    let label = createLabel(storedLabels[nodeId]);
-    labels[nodeId] = label;
-    updateLabelList(nodeId, storedLabels[nodeId]);
-}
-
 // Mode variable to switch between 'transform' and 'select'
 let mode = 'transform';
 let modeButton = document.getElementById('modeButton');
@@ -48,31 +40,39 @@ let labelContainer = document.createElement('div');
 labelContainer.className = 'label-container';
 document.body.appendChild(labelContainer);
 
-// Function to create a label for a node
-function createLabel(text) {
-    let label = document.createElement('div');
-    label.className = 'label';
-    label.innerHTML = text;
-    labelContainer.appendChild(label);
+// Function to create a 3D sprite label
+function createSpriteLabel(text) {
+    let canvas = document.createElement('canvas');
+    let context = canvas.getContext('2d');
+    context.font = 'Bold 24px Arial';
+    context.fillStyle = 'white';
+    context.strokeStyle = 'black';
+    context.lineWidth = 4;
+
+    // Calculate text size and adjust canvas size
+    let textWidth = context.measureText(text).width;
+    canvas.width = textWidth + 10;
+    canvas.height = 40; // Fixed height for labels
+
+    // Draw the text
+    context.strokeText(text, 5, 30);
+    context.fillText(text, 5, 30);
+
+    // Create texture and sprite
+    let texture = new THREE.CanvasTexture(canvas);
+    let material = new THREE.SpriteMaterial({ map: texture });
+    let sprite = new THREE.Sprite(material);
+    sprite.scale.set(2, 1, 1);  // Adjust size of the label
+
+    return sprite;
+}
+
+// Function to add a label to a node
+function addLabelToNode(node, text) {
+    let label = createSpriteLabel(text);
+    label.position.copy(node.position);  // Set the label at the same position as the node
+    scene.add(label);
     return label;
-}
-
-// Update label position based on node's 3D position and camera perspective
-function updateLabelPosition(label, node) {
-    let vector = node.position.clone();
-    vector.project(camera);
-
-    let x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-    let y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
-
-    label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-}
-
-// Function to add a labeled node to the list in the UI
-function updateLabelList(nodeId, labelText) {
-    let li = document.createElement('li');
-    li.innerText = `Node ${nodeId}: ${labelText}`;
-    labelList.appendChild(li);
 }
 
 // Function to load graph data from a JSON file
@@ -127,17 +127,12 @@ function onSelectNode(event) {
 
         if (labelText) {
             if (labels[clickedNode.id]) {
-                labels[clickedNode.id].innerHTML = labelText;
-            } else {
-                let label = createLabel(labelText);
-                labels[clickedNode.id] = label;
+                scene.remove(labels[clickedNode.id]);  // Remove old label
             }
 
-            // Update label position and store the label in localStorage
-            updateLabelPosition(labels[clickedNode.id], clickedNode);
-            storedLabels[clickedNode.id] = labelText;
-            localStorage.setItem('labeledNodes', JSON.stringify(storedLabels));
-            updateLabelList(clickedNode.id, labelText);
+            // Add the new label and store it
+            let label = addLabelToNode(clickedNode, labelText);
+            labels[clickedNode.id] = label;
         }
     }
 }
@@ -178,12 +173,6 @@ window.addEventListener('resize', () => {
 // Render function
 function render() {
     controls.update();  // Update camera controls
-
-    // Update label positions for all labeled nodes
-    for (let nodeId in labels) {
-        updateLabelPosition(labels[nodeId], nodeMeshes[nodeId]);
-    }
-
     renderer.render(scene, camera);
 }
 
