@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Artery Visualization</title>
+    <title>Simple 3D Cube</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -17,91 +17,49 @@
 // Initialize the Three.js scene
 let scene = new THREE.Scene();
 
-// Add a helper grid to make sure the scene is rendering
-let gridHelper = new THREE.GridHelper(20, 20);
-scene.add(gridHelper);
-
-// Add an axes helper to visualize axis directions
-let axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
-
-// Camera setup
+// Set up the camera
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(10, 10, 20);  // Adjust camera position
-camera.lookAt(0, 0, 0);  // Make sure the camera points to the center of the scene
+camera.position.z = 5;
 
-// Renderer setup
+// Set up the renderer
 let renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Lighting
-let ambientLight = new THREE.AmbientLight(0x404040, 1.5); // Soft ambient light
+// Create a cube geometry and a basic material and combine them into a mesh
+let geometry = new THREE.BoxGeometry();
+let material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+let cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+// Add simple lighting (optional, but useful for making objects more visible)
+let ambientLight = new THREE.AmbientLight(0x404040); // Ambient light for overall illumination
 scene.add(ambientLight);
 
-let directionalLight = new THREE.DirectionalLight(0xFFFFFF, 2); // Directional light to simulate sunlight
-directionalLight.position.set(10, 10, 10);
-scene.add(directionalLight);
-
-// Resize handling
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// Function to load artery data from JSON file
-fetch('./artery_data.json')
-    .then(response => response.json())
-    .then(data => {
-        let coord3d = data.coord3d;  // 3D coordinates of artery tracings
-        let rad = data.rad;          // Corresponding radii
-
-        // Loop over each artery tracing
-        for (let i = 0; i < coord3d.length; i++) {
-            let arteryCoords = coord3d[i];  // Get the 3D coordinates of this artery
-            let arteryRadii = rad[i];       // Get the corresponding radii
-
-            // Create spheres and lines to represent the artery
-            for (let j = 0; j < arteryCoords.length - 1; j++) {
-                // Extract x, y, z coordinates for two points
-                let [x1, y1, z1] = arteryCoords[j];
-                let [x2, y2, z2] = arteryCoords[j + 1];
-
-                // Create spheres for each artery point based on radius
-                let radius = arteryRadii[j];
-                let sphereGeometry = new THREE.SphereGeometry(radius, 32, 32);
-                let sphereMaterial = new THREE.MeshPhongMaterial({color: 0xFF0000});
-                let sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                sphere.position.set(x1, y1, z1);
-                scene.add(sphere);
-
-                // Create a line connecting the two points
-                let lineMaterial = new THREE.LineBasicMaterial({color: 0x0000FF});
-                let lineGeometry = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(x1, y1, z1),
-                    new THREE.Vector3(x2, y2, z2)
-                ]);
-                let line = new THREE.Line(lineGeometry, lineMaterial);
-                scene.add(line);
-            }
-        }
-    })
-    .catch(error => console.error('Error loading artery data:', error));
-
-// Set camera position and render the scene
-camera.position.set(0, 0, 10);  // Adjust camera position
-
-// Controls to rotate the scene
+// Add orbit controls so you can interact with the cube
 let controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-// Animation loop to render the scene
-let animate = function () {
+// Animation loop
+function animate() {
     requestAnimationFrame(animate);
 
-    controls.update();  // Update the orbit controls
+    // Rotate the cube for some basic animation
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+
+    // Update controls (to make the cube interactable)
+    controls.update();
+
+    // Render the scene from the perspective of the camera
     renderer.render(scene, camera);
-};
+}
+
+// Handle window resize
+window.addEventListener('resize', function () {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+});
 
 animate();
 </script>
