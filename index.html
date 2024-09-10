@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basic 3D Cube</title>
+    <title>3D Cube with Interaction</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -11,6 +11,8 @@
 </head>
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/controls/OrbitControls.min.js"></script>
+
 <script>
 // Initialize the Three.js scene
 let scene = new THREE.Scene();
@@ -30,8 +32,25 @@ let renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Render the scene
-renderer.render(scene, camera);
+// Add orbit controls for interaction (zoom, rotate, pan)
+let controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;  // Adds smooth transitions for the controls
+controls.dampingFactor = 0.05;  // How fast the transition effect is
+controls.screenSpacePanning = false;  // Keep the panning in ground-plane
+controls.minDistance = 1;  // Limit how far you can zoom out
+controls.maxDistance = 10;  // Limit how far you can zoom in
+
+// Render function
+function render() {
+    controls.update();  // Update the controls
+    renderer.render(scene, camera);
+}
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    render();
+}
 
 // Handle window resizing
 window.addEventListener('resize', function () {
@@ -39,6 +58,9 @@ window.addEventListener('resize', function () {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 });
+
+// Start the animation loop
+animate();
 </script>
 </body>
 </html>
