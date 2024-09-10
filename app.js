@@ -28,6 +28,7 @@ let mouse = new THREE.Vector2();
 // Array to store node meshes and labels
 let nodeMeshes = [];
 let labels = {};
+let labeledNodesList = {};  // Stores labeled nodes for persistence
 
 // Mode variable to switch between 'transform' and 'select'
 let mode = 'transform';
@@ -99,8 +100,22 @@ function loadGraphData() {
                 let line = new THREE.Line(edgeGeometry, edgeMaterial);
                 scene.add(line);
             });
+
+            // Reload any previously stored labels
+            for (let nodeId in labeledNodesList) {
+                let label = addLabelToNode(nodeMeshes[nodeId], labeledNodesList[nodeId]);
+                labels[nodeId] = label;
+            }
         })
         .catch(error => console.error('Error loading graph data:', error));
+}
+
+// Function to clear existing labels
+function clearLabels() {
+    for (let nodeId in labels) {
+        scene.remove(labels[nodeId]);
+        delete labels[nodeId];
+    }
 }
 
 // Node selection handler
@@ -133,8 +148,19 @@ function onSelectNode(event) {
             // Add the new label and store it
             let label = addLabelToNode(clickedNode, labelText);
             labels[clickedNode.id] = label;
+
+            // Store the label in the list for persistence
+            labeledNodesList[clickedNode.id] = labelText;
+            updateLabelList(clickedNode.id, labelText);
         }
     }
+}
+
+// Function to update the labeled nodes list in the UI
+function updateLabelList(nodeId, labelText) {
+    let listItem = document.createElement('li');
+    listItem.innerText = `Node ${nodeId}: ${labelText}`;
+    labelList.appendChild(listItem);
 }
 
 // Reset function to clear stored labels and refresh the page
@@ -150,16 +176,21 @@ modeButton.addEventListener('click', () => {
         controls.enabled = false;  // Disable OrbitControls in select mode
         modeButton.innerHTML = 'Switch to Transform Mode';
 
-        // Ensure no duplicate event listeners
-        document.removeEventListener('mouseup', onSelectNode, false);
-        document.addEventListener('mouseup', onSelectNode, false);  // Add node selection listener
+        // Clear current labels from the scene but keep the list intact
+        clearLabels();
+
+        // Reload graph and labels without resetting the node list
+        loadGraphData();
     } else {
         mode = 'transform';
         controls.enabled = true;  // Enable OrbitControls in transform mode
         modeButton.innerHTML = 'Switch to Selection Mode';
 
-        // Remove node selection listener to prevent interference
-        document.removeEventListener('mouseup', onSelectNode, false);
+        // Clear current labels from the scene but keep the list intact
+        clearLabels();
+
+        // Reload graph and labels without resetting the node list
+        loadGraphData();
     }
 });
 
