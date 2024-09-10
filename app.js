@@ -29,19 +29,21 @@ let mouse = new THREE.Vector2();
 let nodeMeshes = [];
 let labels = {};
 
-// Load labels from localStorage (if they exist)
-let savedLabels = JSON.parse(localStorage.getItem('nodeLabels')) || {};
-
 // Mode variable to switch between 'transform' and 'select'
 let mode = 'transform';
 let modeButton = document.getElementById('modeButton');
+
+// Create a label container to hold all labels
+let labelContainer = document.createElement('div');
+labelContainer.className = 'label-container';
+document.body.appendChild(labelContainer);
 
 // Function to create a label for a node
 function createLabel(text) {
     let label = document.createElement('div');
     label.className = 'label';
     label.innerHTML = text;
-    document.body.appendChild(label);
+    labelContainer.appendChild(label);
     return label;
 }
 
@@ -53,8 +55,7 @@ function updateLabelPosition(label, node) {
     let x = (vector.x * 0.5 + 0.5) * window.innerWidth;
     let y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
 
-    label.style.left = `${x}px`;
-    label.style.top = `${y}px`;
+    label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
 }
 
 // Function to load graph data from a JSON file
@@ -70,13 +71,6 @@ function loadGraphData() {
                 sphere.position.copy(position);
                 scene.add(sphere);
                 nodeMeshes.push(sphere);  // Store the node mesh for raycasting
-
-                // Restore saved labels (if any)
-                if (savedLabels[sphere.id]) {
-                    let label = createLabel(savedLabels[sphere.id]);
-                    labels[sphere.id] = label;
-                    updateLabelPosition(label, sphere);
-                }
             });
 
             // Create edges
@@ -122,10 +116,6 @@ function onSelectNode(event) {
                 labels[clickedNode.id] = label;
             }
             updateLabelPosition(labels[clickedNode.id], clickedNode);
-
-            // Save label to localStorage
-            savedLabels[clickedNode.id] = labelText;
-            localStorage.setItem('nodeLabels', JSON.stringify(savedLabels));
         }
     }
 }
