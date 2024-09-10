@@ -21,6 +21,9 @@ let labeledNodesList = {};
 let labels = {};
 let nodeMeshes = [];
 
+// Add this global variable to store the currently selected node
+let selectedNode = null;
+
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
@@ -129,27 +132,62 @@ function initializeScene() {
     uploadModal.style.display = 'flex';
 }
 
-// Selection handler
+
+
+// Set label button click event
+document.getElementById('setLabelButton').addEventListener('click', () => {
+    if (selectedNode) {
+        let labelValue = document.getElementById('nodeLabel').value;
+        let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+
+        if (labels[selectedNode.id]) {
+            labels[selectedNode.id].labelPlane.dispose();
+            labels[selectedNode.id].labelContainer.dispose();
+        }
+
+        // Create and store the new label
+        let label = createLabel(selectedNode, labelText);
+        labels[selectedNode.id] = label;
+        labeledNodesList[selectedNode.id] = labelText;
+        updateLabelList(selectedNode.id, labelText);
+
+        selectedNode = null;  // Reset selected node after labeling
+    } else {
+        alert("Please select a node first.");
+    }
+});
+
+// Modify onSelectNode to store the clicked node
 function onSelectNode() {
     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-        let clickedNode = pickResult.pickedMesh;
-        let labelText = prompt("Enter label for this node:");
-
-        if (labelText) {
-            if (labels[clickedNode.id]) {
-                labels[clickedNode.id].labelPlane.dispose();
-                labels[clickedNode.id].labelContainer.dispose();
-            }
-
-            // Create and store the new label
-            let label = createLabel(clickedNode, labelText);
-            labels[clickedNode.id] = label;
-            labeledNodesList[clickedNode.id] = labelText;
-            updateLabelList(clickedNode.id, labelText);
-        }
+        selectedNode = pickResult.pickedMesh;  // Store the selected node
+        alert("Node selected. Now choose a label from the dropdown and click 'Set Label'.");
     }
 }
+
+
+// // Selection handler
+// function onSelectNode() {
+//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
+//         let clickedNode = pickResult.pickedMesh;
+//         let labelText = prompt("Enter label for this node:");
+
+//         if (labelText) {
+//             if (labels[clickedNode.id]) {
+//                 labels[clickedNode.id].labelPlane.dispose();
+//                 labels[clickedNode.id].labelContainer.dispose();
+//             }
+
+//             // Create and store the new label
+//             let label = createLabel(clickedNode, labelText);
+//             labels[clickedNode.id] = label;
+//             labeledNodesList[clickedNode.id] = labelText;
+//             updateLabelList(clickedNode.id, labelText);
+//         }
+//     }
+// }
 
 // Save Button Functionality: Save labels as a JSON file
 document.getElementById('saveButton').addEventListener('click', () => {
