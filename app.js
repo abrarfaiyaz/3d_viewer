@@ -5,6 +5,10 @@ document.body.appendChild(canvas);
 
 let engine = new BABYLON.Engine(canvas, true);
 let scene = new BABYLON.Scene(engine);
+
+// Set background to black
+scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+
 let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
 let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
@@ -97,6 +101,11 @@ document.getElementById('resetButton').addEventListener('click', () => {
         labels[id].dispose();
     }
     document.getElementById('labelList').innerHTML = '';
+});
+
+// Resize event handler to keep canvas responsive
+window.addEventListener('resize', () => {
+    engine.resize();
 });
 
 // Create graph and start rendering

@@ -7,15 +7,19 @@
     <style>
         body { margin: 0; overflow: hidden; }
         #renderCanvas {
-            width: 800px;
-            height: 600px;
+            width: 100vw;  /* Full viewport width */
+            height: 100vh; /* Full viewport height */
             display: block;
-            margin: auto; /* Centers the canvas horizontally */
-            border: 1px solid black; /* Optional: to visualize the canvas boundaries */
         }
-        .mode-button, .reset-button {
+        .button-container {
             position: absolute;
             top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Space between buttons */
+        }
+        .mode-button, .reset-button {
             padding: 10px 15px;
             font-size: 16px;
             background-color: #333;
@@ -23,9 +27,8 @@
             cursor: pointer;
             border: none;
             border-radius: 5px;
+            width: 150px;
         }
-        .mode-button { right: 10px; }
-        .reset-button { right: 150px; }
         #labelListContainer {
             position: absolute;
             top: 10px;
@@ -41,11 +44,12 @@
             padding: 0;
         }
     </style>
-    
 </head>
 <body>
-    <button class="mode-button" id="modeButton">Switch to Selection Mode</button>
-    <button class="reset-button" id="resetButton">Reset</button>
+    <div class="button-container">
+        <button class="mode-button" id="modeButton">Switch to Selection Mode</button>
+        <button class="reset-button" id="resetButton">Reset</button>
+    </div>
     <div id="labelListContainer">
         <h3>Labeled Nodes</h3>
         <ul id="labelList"></ul>
