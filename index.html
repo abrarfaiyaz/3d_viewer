@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Artery Visualization</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// Initialize the Three.js scene
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Lighting
+let light = new THREE.PointLight(0xFFFFFF, 1);
+light.position.set(50, 50, 50);
+scene.add(light);
+
+// Function to load artery data from JSON file
+fetch('artery_data.json')
+    .then(response => response.json())
+    .then(data => {
+        let coord3d = data.coord3d;  // 3D coordinates of artery tracings
+        let rad = data.rad;          // Corresponding radii
+
+        // Loop over each artery tracing
+        for (let i = 0; i < coord3d.length; i++) {
+            let arteryCoords = coord3d[i];  // Get the 3D coordinates of this artery
+            let arteryRadii = rad[i];       // Get the corresponding radii
+
+            // Create spheres and lines to represent the artery
+            for (let j = 0; j < arteryCoords.length - 1; j++) {
+                // Extract x, y, z coordinates for two points
+                let [x1, y1, z1] = arteryCoords[j];
+                let [x2, y2, z2] = arteryCoords[j + 1];
+
+                // Create spheres for each artery point based on radius
+                let radius = arteryRadii[j];
+                let sphereGeometry = new THREE.SphereGeometry(radius, 32, 32);
+                let sphereMaterial = new THREE.MeshPhongMaterial({color: 0xFF0000});
+                let sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere.position.set(x1, y1, z1);
+                scene.add(sphere);
+
+                // Create a line connecting the two points
+                let lineMaterial = new THREE.LineBasicMaterial({color: 0x0000FF});
+                let lineGeometry = new THREE.Geometry();
+                lineGeometry.vertices.push(new THREE.Vector3(x1, y1, z1));
+                lineGeometry.vertices.push(new THREE.Vector3(x2, y2, z2));
+                let line = new THREE.Line(lineGeometry, lineMaterial);
+                scene.add(line);
+            }
+        }
+    })
+    .catch(error => console.error('Error loading artery data:', error));
+
+// Set camera position and render the scene
+camera.position.z = 100;
+
+let animate = function () {
+    requestAnimationFrame(animate);
+
+    // Rotate the scene for better visualization
+    scene.rotation.x += 0.01;
+    scene.rotation.y += 0.01;
+
+    renderer.render(scene, camera);
+};
+
+animate();
+</script>
+</body>
+</html>
