@@ -39,19 +39,10 @@ scene.add(ambientLight);
 // Add orbit controls so you can interact with the cube
 let controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-// Animation loop
-function animate() {
-    requestAnimationFrame(animate);
-
-    // Rotate the cube for some basic animation
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-
-    // Update controls (to make the cube interactable)
-    controls.update();
-
-    // Render the scene from the perspective of the camera
-    renderer.render(scene, camera);
+// Render the scene
+function render() {
+    controls.update();  // Update controls (for interaction)
+    renderer.render(scene, camera);  // Render the scene from the perspective of the camera
 }
 
 // Handle window resize
@@ -61,7 +52,8 @@ window.addEventListener('resize', function () {
     camera.updateProjectionMatrix();
 });
 
-animate();
+// Initial render
+render();
 </script>
 </body>
 </html>
