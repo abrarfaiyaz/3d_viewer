@@ -236,8 +236,6 @@ engine.runRenderLoop(() => {
 });
 
 
-
-
 // // Babylon.js setup
 // let canvas = document.createElement('canvas');
 // canvas.id = "renderCanvas";
