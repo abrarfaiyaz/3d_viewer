@@ -14,7 +14,19 @@
             border-radius: 3px;
             border: 1px solid #000;
             font-size: 12px;
-            pointer-events: none;  /* Makes the label unclickable */
+            pointer-events: none;
+        }
+        .mode-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -56,6 +68,28 @@ let mouse = new THREE.Vector2();
 let nodeMeshes = [];
 // Array to store labels
 let labels = {};
+
+// Mode variable to distinguish between transformation and selection/labeling
+let mode = 'transform';  // Possible values: 'transform', 'select'
+
+// Create a button to switch modes
+let modeButton = document.createElement('button');
+modeButton.className = 'mode-button';
+modeButton.innerHTML = 'Switch to Selection Mode';
+document.body.appendChild(modeButton);
+
+// Function to switch modes
+modeButton.addEventListener('click', () => {
+    if (mode === 'transform') {
+        mode = 'select';
+        controls.enabled = false;
+        modeButton.innerHTML = 'Switch to Transform Mode';
+    } else {
+        mode = 'transform';
+        controls.enabled = true;
+        modeButton.innerHTML = 'Switch to Selection Mode';
+    }
+});
 
 // Function to create a label for a node
 function createLabel(text, x, y) {
@@ -115,6 +149,10 @@ loadGraphData();
 
 // Handle node selection on tap (after touch ends)
 function onTouchEnd(event) {
+    if (mode !== 'select') {
+        return;  // Do nothing if we're not in selection mode
+    }
+
     if (event.touches && event.touches.length > 1) {
         // If multi-touch, ignore as it's likely a gesture
         return;
