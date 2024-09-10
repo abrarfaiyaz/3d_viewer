@@ -117,17 +117,36 @@ function onSelectNode(event) {
 }
 
 // Switch between 'transform' and 'select' modes
+// modeButton.addEventListener('click', () => {
+//     if (mode === 'transform') {
+//         mode = 'select';
+//         controls.enabled = false;  // Disable OrbitControls in select mode
+//         modeButton.innerHTML = 'Switch to Transform Mode';
+//         document.addEventListener('mouseup', onSelectNode, false);  // Add node selection listener
+//     } else {
+//         mode = 'transform';
+//         controls.enabled = true;  // Enable OrbitControls in transform mode
+//         modeButton.innerHTML = 'Switch to Selection Mode';
+//         document.removeEventListener('mouseup', onSelectNode, false);  // Remove node selection listener
+//     }
+// });
+
 modeButton.addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
         controls.enabled = false;  // Disable OrbitControls in select mode
         modeButton.innerHTML = 'Switch to Transform Mode';
+
+        // Ensure no duplicate event listeners
+        document.removeEventListener('mouseup', onSelectNode, false);
         document.addEventListener('mouseup', onSelectNode, false);  // Add node selection listener
     } else {
         mode = 'transform';
         controls.enabled = true;  // Enable OrbitControls in transform mode
         modeButton.innerHTML = 'Switch to Selection Mode';
-        document.removeEventListener('mouseup', onSelectNode, false);  // Remove node selection listener
+
+        // Remove node selection listener to prevent interference
+        document.removeEventListener('mouseup', onSelectNode, false);
     }
 });
 
