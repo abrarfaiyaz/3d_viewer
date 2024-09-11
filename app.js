@@ -31,6 +31,21 @@ customModal.style.display = 'none'; // Initially hidden
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
+// Function to create the reference axis
+function createReferenceAxis(size) {
+    function makeAxisLine(start, end, color) {
+        let axis = BABYLON.MeshBuilder.CreateLines("axis", { points: [start, end] }, scene);
+        axis.color = color;
+    }
+    
+    makeAxisLine(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(size, 0, 0), new BABYLON.Color3(1, 0, 0)); // X axis - Red
+    makeAxisLine(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, size, 0), new BABYLON.Color3(0, 1, 0)); // Y axis - Green
+    makeAxisLine(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 0, size), new BABYLON.Color3(0, 0, 1)); // Z axis - Blue
+}
+
+// Call the function to create the reference axis
+createReferenceAxis(10);
+
 function createLabel(node, text) {
     let label = new BABYLON.GUI.TextBlock();
     label.text = text;
@@ -259,9 +274,9 @@ document.getElementById('modeButton').addEventListener('click', () => {
     }
 });
 
-// Keyboard Shortcuts for M (toggle mode), R (reset), Ctrl+S (save), + and - (adjust node size)
+// Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
 window.addEventListener('keydown', (event) => {
-    if (event.key === 'M' || event.key === 'm') {
+    if (event.key === 'D' || event.key === 'd') {
         // Toggle the mode
         document.getElementById('modeButton').click();
     } else if (event.key === 'R' || event.key === 'r') {
@@ -271,7 +286,7 @@ window.addEventListener('keydown', (event) => {
         // Save labels with Ctrl+S
         event.preventDefault();  // Prevent browser's default save action
         document.getElementById('saveButton').click();
-    } else if (event.key === '+') {
+    } else if (event.key === '=') {
         // Increase node size via slider
         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
@@ -279,6 +294,30 @@ window.addEventListener('keydown', (event) => {
         // Decrease node size via slider
         nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+    }
+});
+
+// Implement Z-axis rotation on drag
+let isDragging = false;
+let previousX = 0;
+canvas.addEventListener('pointerdown', (event) => {
+    isDragging = true;
+    previousX = event.clientX;
+});
+
+canvas.addEventListener('pointerup', () => {
+    isDragging = false;
+});
+
+canvas.addEventListener('pointermove', (event) => {
+    if (isDragging) {
+        let deltaX = event.clientX - previousX;
+        previousX = event.clientX;
+
+        // Rotate the entire scene around Z-axis based on the horizontal mouse movement
+        scene.meshes.forEach(mesh => {
+            mesh.rotate(BABYLON.Axis.Z, deltaX * 0.01, BABYLON.Space.WORLD);
+        });
     }
 });
 
@@ -309,6 +348,7 @@ initializeScene();
 engine.runRenderLoop(() => {
     scene.render();
 });
+
 
 
 
@@ -456,7 +496,8 @@ engine.runRenderLoop(() => {
 // });
 
 // // Add an event listener to adjust node sizes via the slider
-// document.getElementById('nodeSizeSlider').addEventListener('input', (event) => {
+// const nodeSizeSlider = document.getElementById('nodeSizeSlider');
+// nodeSizeSlider.addEventListener('input', (event) => {
 //     let newDiameter = parseFloat(event.target.value);
 
 //     nodeMeshes.forEach(node => {
@@ -572,6 +613,29 @@ engine.runRenderLoop(() => {
 //     }
 // });
 
+// // Keyboard Shortcuts for M (toggle mode), R (reset), Ctrl+S (save), + and - (adjust node size)
+// window.addEventListener('keydown', (event) => {
+//     if (event.key === 'M' || event.key === 'm') {
+//         // Toggle the mode
+//         document.getElementById('modeButton').click();
+//     } else if (event.key === 'R' || event.key === 'r') {
+//         // Reset labels
+//         document.getElementById('resetButton').click();
+//     } else if (event.key === 's' && event.ctrlKey) {
+//         // Save labels with Ctrl+S
+//         event.preventDefault();  // Prevent browser's default save action
+//         document.getElementById('saveButton').click();
+//     } else if (event.key === '+') {
+//         // Increase node size via slider
+//         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
+//         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+//     } else if (event.key === '-') {
+//         // Decrease node size via slider
+//         nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
+//         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+//     }
+// });
+
 // // Add WebXR experience for VR exploration on Quest 2
 // async function enableVR() {
 //     const xr = await scene.createDefaultXRExperienceAsync({
@@ -599,6 +663,7 @@ engine.runRenderLoop(() => {
 // engine.runRenderLoop(() => {
 //     scene.render();
 // });
+
 
 
 
