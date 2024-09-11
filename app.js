@@ -296,7 +296,17 @@ window.addEventListener('keydown', (event) => {
         visualizeTraces();
     }
 });
-
+document.getElementById('traceUpload').addEventListener('change', function(event) {
+    let file = event.target.files[0];
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let text = e.target.result;
+            parseSWCFile(text); // This function should handle and parse the .swc file
+        };
+        reader.readAsText(file);
+    }
+});
 // Add WebXR experience for VR exploration on Quest 2
 async function enableVR() {
     const xr = await scene.createDefaultXRExperienceAsync({
