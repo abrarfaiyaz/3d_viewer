@@ -142,7 +142,8 @@ document.getElementById('resetButton').addEventListener('click', () => {
 });
 
 // Add an event listener to adjust node sizes via the slider
-document.getElementById('nodeSizeSlider').addEventListener('input', (event) => {
+const nodeSizeSlider = document.getElementById('nodeSizeSlider');
+nodeSizeSlider.addEventListener('input', (event) => {
     let newDiameter = parseFloat(event.target.value);
 
     nodeMeshes.forEach(node => {
@@ -258,6 +259,29 @@ document.getElementById('modeButton').addEventListener('click', () => {
     }
 });
 
+// Keyboard Shortcuts for M (toggle mode), R (reset), Ctrl+S (save), + and - (adjust node size)
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'M' || event.key === 'm') {
+        // Toggle the mode
+        document.getElementById('modeButton').click();
+    } else if (event.key === 'R' || event.key === 'r') {
+        // Reset labels
+        document.getElementById('resetButton').click();
+    } else if (event.key === 's' && event.ctrlKey) {
+        // Save labels with Ctrl+S
+        event.preventDefault();  // Prevent browser's default save action
+        document.getElementById('saveButton').click();
+    } else if (event.key === '+') {
+        // Increase node size via slider
+        nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
+        nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+    } else if (event.key === '-') {
+        // Decrease node size via slider
+        nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
+        nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+    }
+});
+
 // Add WebXR experience for VR exploration on Quest 2
 async function enableVR() {
     const xr = await scene.createDefaultXRExperienceAsync({
@@ -288,9 +312,6 @@ engine.runRenderLoop(() => {
 
 
 
-
-
-
 // // Babylon.js setup
 // let canvas = document.createElement('canvas');
 // canvas.id = "renderCanvas";
@@ -306,8 +327,8 @@ engine.runRenderLoop(() => {
 // let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
 // camera.attachControl(canvas, true);
 
-// // Create light
-// let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+// // Create light (changed light to come from the opposite side)
+// let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0), scene);
 
 // // Variables for labeling
 // let mode = 'transform';
@@ -432,6 +453,15 @@ engine.runRenderLoop(() => {
 // // Event listener for "Reset" button
 // document.getElementById('resetButton').addEventListener('click', () => {
 //     resetLabels();  // Reset all labels when the button is clicked
+// });
+
+// // Add an event listener to adjust node sizes via the slider
+// document.getElementById('nodeSizeSlider').addEventListener('input', (event) => {
+//     let newDiameter = parseFloat(event.target.value);
+
+//     nodeMeshes.forEach(node => {
+//         node.scaling = new BABYLON.Vector3(newDiameter / 6, newDiameter / 6, newDiameter / 6);
+//     });
 // });
 
 // // Load default graph from graph_data.json
@@ -569,4 +599,6 @@ engine.runRenderLoop(() => {
 // engine.runRenderLoop(() => {
 //     scene.render();
 // });
+
+
 
