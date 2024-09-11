@@ -10,7 +10,7 @@ let scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
 // Create camera
-let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, 50,  Math.PI / 4, new BABYLON.Vector3(0, 0, 0), scene);
+let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
 
 // Create light (changed light to come from the opposite side)
@@ -31,37 +31,49 @@ customModal.style.display = 'none'; // Initially hidden
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-function createLabel(node, text) {
-    let label = new BABYLON.GUI.TextBlock();
-    label.text = text;
-    label.color = "white";
-    label.fontSize = 14;  // Reduced font size to 14
-    label.outlineWidth = 2;
-    label.outlineColor = "black";
-    
-    let labelContainer = new BABYLON.GUI.Rectangle();
-    labelContainer.width = "200px"; // Adjusted container width to 200px
-    labelContainer.height = "20px"; // Adjusted container height to 20px
-    labelContainer.thickness = 0;
-    labelContainer.background = "rgba(0, 0, 0, 0.5)"; // Optional: semi-transparent background
-    labelContainer.addControl(label);
-    
-    let labelPlane = BABYLON.MeshBuilder.CreatePlane("labelPlane", { size: 2 }, scene);
-    labelPlane.position = node.position.clone();
-    labelPlane.position.y += 1.5; // Position label above the node
-    
-    advancedTexture.addControl(labelContainer);
-    labelContainer.linkWithMesh(labelPlane);
-    
-    labelPlane.isPickable = false;
-    
-    return { labelPlane, labelContainer };
-}
+// Trace-related variables
+let tracesVisible = false; // Toggle to check if traces are visible
+let traceMeshes = []; // Array to store trace meshes
 
-function updateLabelList(nodeId, labelText) {
-    let listItem = document.createElement('li');
-    listItem.innerText = `Node ${nodeId}: ${labelText}`;
-    document.getElementById('labelList').appendChild(listItem);
+// Function to visualize traces (rawtraces is assumed to be available)
+function visualizeTraces() {
+    // If traces are already visible, remove them
+    if (tracesVisible) {
+        traceMeshes.forEach(mesh => mesh.dispose());
+        traceMeshes = [];
+        tracesVisible = false;
+        return;
+    }
+
+    // Example trace data (replace with actual rawtraces data if available)
+    let rawtraces = [
+        // Example of two traces
+        { positions: [new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(1, 1, 1), new BABYLON.Vector3(2, 2, 2)], radii: [0.5, 0.3, 0.2] },
+        { positions: [new BABYLON.Vector3(3, 3, 3), new BABYLON.Vector3(4, 4, 4), new BABYLON.Vector3(5, 5, 5)], radii: [0.4, 0.3, 0.25] }
+    ];
+
+    rawtraces.forEach(trace => {
+        let positions = trace.positions;
+        let radii = trace.radii;
+
+        // Create a tube for each trace
+        let tube = BABYLON.MeshBuilder.CreateTube("tube", {
+            path: positions,
+            radiusFunction: (i) => radii[i],
+            tessellation: 8
+        }, scene);
+
+        // Set tube material for transparency
+        let material = new BABYLON.StandardMaterial("tubeMaterial", scene);
+        material.diffuseColor = new BABYLON.Color3(0, 0.8, 1); // Set color
+        material.alpha = 0.5;  // Set transparency
+        tube.material = material;
+
+        // Add the tube to the traceMeshes array
+        traceMeshes.push(tube);
+    });
+
+    tracesVisible = true; // Set traces as visible
 }
 
 // Function to create the graph
@@ -251,7 +263,7 @@ document.getElementById('modeButton').addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-               scene.onPointerDown = onSelectNode;  // Enable node selection
+        scene.onPointerDown = onSelectNode;  // Enable node selection
     } else {
         mode = 'transform';
         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
@@ -259,7 +271,7 @@ document.getElementById('modeButton').addEventListener('click', () => {
     }
 });
 
-// Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
+// Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), - (decrease node size), T (toggle traces)
 window.addEventListener('keydown', (event) => {
     if (event.key === 'D' || event.key === 'd') {
         // Toggle the mode
@@ -279,6 +291,9 @@ window.addEventListener('keydown', (event) => {
         // Decrease node size via slider
         nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+    } else if (event.key === 'T' || event.key === 't') {
+        // Toggle trace visualization
+        visualizeTraces();
     }
 });
 
@@ -311,10 +326,6 @@ engine.runRenderLoop(() => {
 });
 
 
-
-
-
-
 // // Babylon.js setup
 // let canvas = document.createElement('canvas');
 // canvas.id = "renderCanvas";
@@ -327,7 +338,7 @@ engine.runRenderLoop(() => {
 // scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
 // // Create camera
-// let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
+// let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, 50,  Math.PI / 4, new BABYLON.Vector3(0, 0, 0), scene);
 // camera.attachControl(canvas, true);
 
 // // Create light (changed light to come from the opposite side)
@@ -568,7 +579,7 @@ engine.runRenderLoop(() => {
 //     if (mode === 'transform') {
 //         mode = 'select';
 //         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-//         scene.onPointerDown = onSelectNode;  // Enable node selection
+//                scene.onPointerDown = onSelectNode;  // Enable node selection
 //     } else {
 //         mode = 'transform';
 //         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
@@ -576,9 +587,9 @@ engine.runRenderLoop(() => {
 //     }
 // });
 
-// // Keyboard Shortcuts for M (toggle mode), R (reset), Ctrl+S (save), + and - (adjust node size)
+// // Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
 // window.addEventListener('keydown', (event) => {
-//     if (event.key === 'M' || event.key === 'm') {
+//     if (event.key === 'D' || event.key === 'd') {
 //         // Toggle the mode
 //         document.getElementById('modeButton').click();
 //     } else if (event.key === 'R' || event.key === 'r') {
@@ -588,7 +599,7 @@ engine.runRenderLoop(() => {
 //         // Save labels with Ctrl+S
 //         event.preventDefault();  // Prevent browser's default save action
 //         document.getElementById('saveButton').click();
-//     } else if (event.key === '+') {
+//     } else if (event.key === '=') {
 //         // Increase node size via slider
 //         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
 //         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
@@ -626,6 +637,9 @@ engine.runRenderLoop(() => {
 // engine.runRenderLoop(() => {
 //     scene.render();
 // });
+
+
+
 
 
 
