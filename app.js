@@ -237,11 +237,34 @@ function onSelectNode() {
         
         // Check if the node is already labeled
         if (labeledNodesList[selectedNode.id]) {
-            alert("This node is already labeled.");
-            return;  // Exit function if the node is already labeled
+            // Ask the user if they want to relabel the node
+            let confirmRelabel = confirm("This node is already labeled. Do you want to relabel it?");
+            if (confirmRelabel) {
+                // Remove the previous label before relabeling
+                labels[selectedNode.id].labelPlane.dispose();
+                labels[selectedNode.id].labelContainer.dispose();
+                delete labels[selectedNode.id];  // Remove the label from the labels dictionary
+                
+                // Also remove the previous label from the UI list
+                removeLabelFromUI(selectedNode.id);
+                
+                showCustomModal();  // Show custom modal to relabel
+            }
+        } else {
+            showCustomModal();  // Show custom modal with dropdown if not labeled yet
         }
+    }
+}
 
-        showCustomModal();  // Show custom modal with dropdown
+// Function to remove a label from the UI list
+function removeLabelFromUI(nodeId) {
+    let labelList = document.getElementById('labelList');
+    let items = labelList.getElementsByTagName('li');
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].innerText.startsWith(`Node ${nodeId}:`)) {
+            labelList.removeChild(items[i]);  // Remove the list item for the node
+            break;
+        }
     }
 }
 
@@ -250,12 +273,6 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
     if (selectedNode) {
         let labelValue = document.getElementById('nodeLabel').value;
         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-
-        // Check again before creating a label to avoid multiple labels for the same node
-        if (labeledNodesList[selectedNode.id]) {
-            alert("This node is already labeled.");
-            return;  // Exit function if the node is already labeled
-        }
 
         // Create and store the new label
         let label = createLabel(selectedNode, labelText);
@@ -269,6 +286,7 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
         alert("Please select a node first.");
     }
 });
+
 
 // // Selection handler
 // function onSelectNode() {
