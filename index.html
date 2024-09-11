@@ -89,11 +89,15 @@
         </div>
     </div>
     
-    <div class="button-container">
-        <button class="mode-button" id="modeButton">Switch to Selection Mode</button>
-        <button class="reset-button" id="resetButton">Reset</button>
-        <button class="save-button" id="saveButton">Save Labels</button>
-    </div>
+   <div class="button-container">
+    <button class="mode-button" id="modeButton">Switch to Selection Mode</button>
+    <button class="reset-button" id="resetButton">Reset</button>
+    <button class="save-button" id="saveButton">Save Labels</button>
+
+    <!-- Add the slider for adjusting node diameter -->
+    <input type="range" id="nodeSizeSlider" min="1" max="6" value="6">
+    <label for="nodeSizeSlider">Node Size</label>
+</div>
     
     <div id="labelListContainer">
         <h3>Labeled Nodes</h3>
