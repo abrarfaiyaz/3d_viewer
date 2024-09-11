@@ -32,13 +32,13 @@ function createLabel(node, text) {
     let label = new BABYLON.GUI.TextBlock();
     label.text = text;
     label.color = "white";
-    label.fontSize = 20;
+    label.fontSize = 14;
     label.outlineWidth = 2;
     label.outlineColor = "black";
     
     let labelContainer = new BABYLON.GUI.Rectangle();
-    labelContainer.width = "100px";
-    labelContainer.height = "40px";
+    labelContainer.width = "200px";
+    labelContainer.height = "20px";
     labelContainer.thickness = 0;
     labelContainer.addControl(label);
     
