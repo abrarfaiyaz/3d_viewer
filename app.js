@@ -108,9 +108,32 @@ function saveLabelsAsJSON() {
     document.body.removeChild(link);  // Clean up after download
 }
 
-// Save Button Functionality: Add event listener to the "Save Labels" button
+// Function to reset labels
+function resetLabels() {
+    // Remove all labels from the labeledNodesList
+    labeledNodesList = {};
+
+    // Dispose of all label planes and GUI elements
+    for (let id in labels) {
+        labels[id].labelPlane.dispose();
+        labels[id].labelContainer.dispose();
+    }
+
+    // Clear the labels dictionary
+    labels = {};
+
+    // Clear the label list in the UI
+    document.getElementById('labelList').innerHTML = '';
+}
+
+// Event listener for "Save Labels" button
 document.getElementById('saveButton').addEventListener('click', () => {
-    saveLabelsAsJSON();  // Call the save function when button is clicked
+    saveLabelsAsJSON();  // Save the labels when the button is clicked
+});
+
+// Event listener for "Reset" button
+document.getElementById('resetButton').addEventListener('click', () => {
+    resetLabels();  // Reset all labels when the button is clicked
 });
 
 // Load default graph from graph_data.json
@@ -231,7 +254,6 @@ initializeScene();
 engine.runRenderLoop(() => {
     scene.render();
 });
-
 
 
 // // Babylon.js setup
