@@ -31,21 +31,6 @@ customModal.style.display = 'none'; // Initially hidden
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-// Function to create the reference axis
-function createReferenceAxis(size) {
-    function makeAxisLine(start, end, color) {
-        let axis = BABYLON.MeshBuilder.CreateLines("axis", { points: [start, end] }, scene);
-        axis.color = color;
-    }
-    
-    makeAxisLine(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(size, 0, 0), new BABYLON.Color3(1, 0, 0)); // X axis - Red
-    makeAxisLine(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, size, 0), new BABYLON.Color3(0, 1, 0)); // Y axis - Green
-    makeAxisLine(new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(0, 0, size), new BABYLON.Color3(0, 0, 1)); // Z axis - Blue
-}
-
-// Call the function to create the reference axis
-createReferenceAxis(10);
-
 function createLabel(node, text) {
     let label = new BABYLON.GUI.TextBlock();
     label.text = text;
@@ -266,7 +251,7 @@ document.getElementById('modeButton').addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-        scene.onPointerDown = onSelectNode;  // Enable node selection
+               scene.onPointerDown = onSelectNode;  // Enable node selection
     } else {
         mode = 'transform';
         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
@@ -297,30 +282,6 @@ window.addEventListener('keydown', (event) => {
     }
 });
 
-// Implement Z-axis rotation on drag
-let isDragging = false;
-let previousX = 0;
-canvas.addEventListener('pointerdown', (event) => {
-    isDragging = true;
-    previousX = event.clientX;
-});
-
-canvas.addEventListener('pointerup', () => {
-    isDragging = false;
-});
-
-canvas.addEventListener('pointermove', (event) => {
-    if (isDragging) {
-        let deltaX = event.clientX - previousX;
-        previousX = event.clientX;
-
-        // Rotate the entire scene around Z-axis based on the horizontal mouse movement
-        scene.meshes.forEach(mesh => {
-            mesh.rotate(BABYLON.Axis.Z, deltaX * 0.01, BABYLON.Space.WORLD);
-        });
-    }
-});
-
 // Add WebXR experience for VR exploration on Quest 2
 async function enableVR() {
     const xr = await scene.createDefaultXRExperienceAsync({
@@ -348,6 +309,8 @@ initializeScene();
 engine.runRenderLoop(() => {
     scene.render();
 });
+
+
 
 
 
