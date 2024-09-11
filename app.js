@@ -10,7 +10,7 @@ let scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
 // Create camera
-let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
+let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, 50,  Math.PI / 4, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
 
 // Create light (changed light to come from the opposite side)
