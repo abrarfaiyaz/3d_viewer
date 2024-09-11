@@ -1,3 +1,5 @@
+
+
 // Babylon.js setup
 let canvas = document.createElement('canvas');
 canvas.id = "renderCanvas";
@@ -10,7 +12,7 @@ let scene = new BABYLON.Scene(engine);
 scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
 // Create camera
-let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
+let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, 50,  Math.PI / 4, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
 
 // Create light (changed light to come from the opposite side)
@@ -31,49 +33,37 @@ customModal.style.display = 'none'; // Initially hidden
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-// Trace-related variables
-let tracesVisible = false; // Toggle to check if traces are visible
-let traceMeshes = []; // Array to store trace meshes
+function createLabel(node, text) {
+    let label = new BABYLON.GUI.TextBlock();
+    label.text = text;
+    label.color = "white";
+    label.fontSize = 14;  // Reduced font size to 14
+    label.outlineWidth = 2;
+    label.outlineColor = "black";
+    
+    let labelContainer = new BABYLON.GUI.Rectangle();
+    labelContainer.width = "200px"; // Adjusted container width to 200px
+    labelContainer.height = "20px"; // Adjusted container height to 20px
+    labelContainer.thickness = 0;
+    labelContainer.background = "rgba(0, 0, 0, 0.5)"; // Optional: semi-transparent background
+    labelContainer.addControl(label);
+    
+    let labelPlane = BABYLON.MeshBuilder.CreatePlane("labelPlane", { size: 2 }, scene);
+    labelPlane.position = node.position.clone();
+    labelPlane.position.y += 1.5; // Position label above the node
+    
+    advancedTexture.addControl(labelContainer);
+    labelContainer.linkWithMesh(labelPlane);
+    
+    labelPlane.isPickable = false;
+    
+    return { labelPlane, labelContainer };
+}
 
-// Function to visualize traces (rawtraces is assumed to be available)
-function visualizeTraces() {
-    // If traces are already visible, remove them
-    if (tracesVisible) {
-        traceMeshes.forEach(mesh => mesh.dispose());
-        traceMeshes = [];
-        tracesVisible = false;
-        return;
-    }
-
-    // Example trace data (replace with actual rawtraces data if available)
-    let rawtraces = [
-        // Example of two traces
-        { positions: [new BABYLON.Vector3(0, 0, 0), new BABYLON.Vector3(1, 1, 1), new BABYLON.Vector3(2, 2, 2)], radii: [0.5, 0.3, 0.2] },
-        { positions: [new BABYLON.Vector3(3, 3, 3), new BABYLON.Vector3(4, 4, 4), new BABYLON.Vector3(5, 5, 5)], radii: [0.4, 0.3, 0.25] }
-    ];
-
-    rawtraces.forEach(trace => {
-        let positions = trace.positions;
-        let radii = trace.radii;
-
-        // Create a tube for each trace
-        let tube = BABYLON.MeshBuilder.CreateTube("tube", {
-            path: positions,
-            radiusFunction: (i) => radii[i],
-            tessellation: 8
-        }, scene);
-
-        // Set tube material for transparency
-        let material = new BABYLON.StandardMaterial("tubeMaterial", scene);
-        material.diffuseColor = new BABYLON.Color3(0, 0.8, 1); // Set color
-        material.alpha = 0.5;  // Set transparency
-        tube.material = material;
-
-        // Add the tube to the traceMeshes array
-        traceMeshes.push(tube);
-    });
-
-    tracesVisible = true; // Set traces as visible
+function updateLabelList(nodeId, labelText) {
+    let listItem = document.createElement('li');
+    listItem.innerText = `Node ${nodeId}: ${labelText}`;
+    document.getElementById('labelList').appendChild(listItem);
 }
 
 // Function to create the graph
@@ -263,7 +253,7 @@ document.getElementById('modeButton').addEventListener('click', () => {
     if (mode === 'transform') {
         mode = 'select';
         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-        scene.onPointerDown = onSelectNode;  // Enable node selection
+               scene.onPointerDown = onSelectNode;  // Enable node selection
     } else {
         mode = 'transform';
         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
@@ -271,7 +261,7 @@ document.getElementById('modeButton').addEventListener('click', () => {
     }
 });
 
-// Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), - (decrease node size), T (toggle traces)
+// Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
 window.addEventListener('keydown', (event) => {
     if (event.key === 'D' || event.key === 'd') {
         // Toggle the mode
@@ -291,22 +281,9 @@ window.addEventListener('keydown', (event) => {
         // Decrease node size via slider
         nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
-    } else if (event.key === 'T' || event.key === 't') {
-        // Toggle trace visualization
-        visualizeTraces();
     }
 });
-document.getElementById('traceUpload').addEventListener('change', function(event) {
-    let file = event.target.files[0];
-    if (file) {
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let text = e.target.result;
-            parseSWCFile(text); // This function should handle and parse the .swc file
-        };
-        reader.readAsText(file);
-    }
-});
+
 // Add WebXR experience for VR exploration on Quest 2
 async function enableVR() {
     const xr = await scene.createDefaultXRExperienceAsync({
@@ -334,319 +311,6 @@ initializeScene();
 engine.runRenderLoop(() => {
     scene.render();
 });
-
-
-// // Babylon.js setup
-// let canvas = document.createElement('canvas');
-// canvas.id = "renderCanvas";
-// document.body.appendChild(canvas);
-
-// let engine = new BABYLON.Engine(canvas, true);
-// let scene = new BABYLON.Scene(engine);
-
-// // Set background to black
-// scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
-
-// // Create camera
-// let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, 50,  Math.PI / 4, new BABYLON.Vector3(0, 0, 0), scene);
-// camera.attachControl(canvas, true);
-
-// // Create light (changed light to come from the opposite side)
-// let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0), scene);
-
-// // Variables for labeling
-// let mode = 'transform';
-// let labeledNodesList = {}; // Object to store labeled nodes
-// let labels = {};
-// let nodeMeshes = [];
-// let selectedNode = null; // Variable to store the currently selected node
-
-// // Custom modal elements
-// const customModal = document.getElementById('customModal');
-// const dropdownMenu = document.getElementById('nodeLabel');
-// customModal.style.display = 'none'; // Initially hidden
-
-// // Babylon.js GUI for Labels
-// let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-// function createLabel(node, text) {
-//     let label = new BABYLON.GUI.TextBlock();
-//     label.text = text;
-//     label.color = "white";
-//     label.fontSize = 14;  // Reduced font size to 14
-//     label.outlineWidth = 2;
-//     label.outlineColor = "black";
-    
-//     let labelContainer = new BABYLON.GUI.Rectangle();
-//     labelContainer.width = "200px"; // Adjusted container width to 200px
-//     labelContainer.height = "20px"; // Adjusted container height to 20px
-//     labelContainer.thickness = 0;
-//     labelContainer.background = "rgba(0, 0, 0, 0.5)"; // Optional: semi-transparent background
-//     labelContainer.addControl(label);
-    
-//     let labelPlane = BABYLON.MeshBuilder.CreatePlane("labelPlane", { size: 2 }, scene);
-//     labelPlane.position = node.position.clone();
-//     labelPlane.position.y += 1.5; // Position label above the node
-    
-//     advancedTexture.addControl(labelContainer);
-//     labelContainer.linkWithMesh(labelPlane);
-    
-//     labelPlane.isPickable = false;
-    
-//     return { labelPlane, labelContainer };
-// }
-
-// function updateLabelList(nodeId, labelText) {
-//     let listItem = document.createElement('li');
-//     listItem.innerText = `Node ${nodeId}: ${labelText}`;
-//     document.getElementById('labelList').appendChild(listItem);
-// }
-
-// // Function to create the graph
-// function createGraph(data) {
-//     // Clear existing nodes and edges
-//     nodeMeshes = [];
-    
-//     // Create Nodes
-//     data.nodes.forEach(nodeData => {
-//         let node = BABYLON.MeshBuilder.CreateSphere(`${nodeData.id}`, { diameter: 6 }, scene);
-//         node.position = new BABYLON.Vector3(nodeData.x, nodeData.y, nodeData.z);
-//         nodeMeshes.push(node);
-//     });
-
-//     // Create Edges (Lines)
-//     data.edges.forEach(edgeData => {
-//         let fromNode = nodeMeshes[edgeData.from];
-//         let toNode = nodeMeshes[edgeData.to];
-//         BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
-//             points: [fromNode.position, toNode.position]
-//         }, scene);
-//     });
-// }
-
-// // Function to save labels as JSON with labelText included
-// function saveLabelsAsJSON() {
-//     const labeledNodes = [];
-
-//     // Collect labeled nodes and their labels
-//     for (let id in labeledNodesList) {
-//         labeledNodes.push({
-//             id: id,
-//             labelText: labeledNodesList[id],  // Save both id and labelText
-//         });
-//     }
-
-//     // Convert to JSON string
-//     const jsonString = JSON.stringify({ labeledNodes }, null, 2);
-
-//     // Create a Blob from the JSON string
-//     const blob = new Blob([jsonString], { type: "application/json" });
-
-//     // Create a link element to download the file
-//     const link = document.createElement("a");
-//     link.href = URL.createObjectURL(blob);
-//     link.download = "labeled_nodes.json";
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);  // Clean up after download
-// }
-
-// // Function to reset labels
-// function resetLabels() {
-//     // Remove all labels from the labeledNodesList
-//     labeledNodesList = {};
-
-//     // Dispose of all label planes and GUI elements
-//     for (let id in labels) {
-//         labels[id].labelPlane.dispose();
-//         labels[id].labelContainer.dispose();
-//     }
-
-//     // Clear the labels dictionary
-//     labels = {};
-
-//     // Clear the label list in the UI
-//     document.getElementById('labelList').innerHTML = '';
-// }
-
-// // Event listener for "Save Labels" button
-// document.getElementById('saveButton').addEventListener('click', () => {
-//     saveLabelsAsJSON();  // Save the labels when the button is clicked
-// });
-
-// // Event listener for "Reset" button
-// document.getElementById('resetButton').addEventListener('click', () => {
-//     resetLabels();  // Reset all labels when the button is clicked
-// });
-
-// // Add an event listener to adjust node sizes via the slider
-// const nodeSizeSlider = document.getElementById('nodeSizeSlider');
-// nodeSizeSlider.addEventListener('input', (event) => {
-//     let newDiameter = parseFloat(event.target.value);
-
-//     nodeMeshes.forEach(node => {
-//         node.scaling = new BABYLON.Vector3(newDiameter / 6, newDiameter / 6, newDiameter / 6);
-//     });
-// });
-
-// // Load default graph from graph_data.json
-// async function loadDefaultGraph() {
-//     try {
-//         const response = await fetch('graph_data.json');
-//         const data = await response.json();
-//         createGraph(data);
-//     } catch (error) {
-//         console.error("Error loading default graph:", error);
-//     }
-// }
-
-// // Handle uploaded file
-// function handleFileUpload(file) {
-//     const reader = new FileReader();
-//     reader.onload = (event) => {
-//         try {
-//             const data = JSON.parse(event.target.result);
-//             createGraph(data);
-//         } catch (error) {
-//             console.error("Invalid JSON format:", error);
-//             alert("The uploaded file is not a valid JSON file. Please try again.");
-//         }
-//     };
-//     reader.readAsText(file);
-// }
-
-// // Modal and upload elements
-// const uploadModal = document.getElementById('uploadModal');
-// const fileInput = document.getElementById('fileInput');
-// const cancelButton = document.getElementById('cancelButton');
-
-// // Event listener for file input
-// fileInput.addEventListener('change', (event) => {
-//     const file = event.target.files[0];
-//     if (file) {
-//         handleFileUpload(file);
-//         uploadModal.style.display = 'none';  // Hide the modal after upload
-//     }
-// });
-
-// // Cancel button event listener: load default graph if the user cancels the upload
-// cancelButton.addEventListener('click', () => {
-//     uploadModal.style.display = 'none';  // Hide the modal
-//     loadDefaultGraph();  // Load the default graph from the JSON file
-// });
-
-// // Function to initialize the scene
-// function initializeScene() {
-//     // Show the upload modal when the website loads
-//     uploadModal.style.display = 'flex';
-// }
-
-// // Function to display the custom modal with the dropdown
-// function showCustomModal() {
-//     customModal.style.display = 'flex'; // Show custom modal
-// }
-
-// // Hide modal after setting the label
-// function hideCustomModal() {
-//     customModal.style.display = 'none'; // Hide custom modal
-// }
-
-// // Selection handler
-// function onSelectNode() {
-//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
-//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-//         selectedNode = pickResult.pickedMesh;  // Store the selected node
-//         showCustomModal();  // Show custom modal with dropdown
-//     }
-// }
-
-// // Set label button click event in the custom modal
-// document.getElementById('setLabelButton').addEventListener('click', () => {
-//     if (selectedNode) {
-//         let labelValue = document.getElementById('nodeLabel').value;
-//         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-
-//         if (labels[selectedNode.id]) {
-//             labels[selectedNode.id].labelPlane.dispose();
-//             labels[selectedNode.id].labelContainer.dispose();
-//         }
-
-//         // Create and store the new label
-//         let label = createLabel(selectedNode, labelText);
-//         labels[selectedNode.id] = label;
-//         labeledNodesList[selectedNode.id] = labelText;
-//         updateLabelList(selectedNode.id, labelText);
-
-//         selectedNode = null;  // Reset selected node after labeling
-//         hideCustomModal();  // Hide the custom modal after setting the label
-//     } else {
-//         alert("Please select a node first.");
-//     }
-// });
-
-// // Mode Switch Button
-// document.getElementById('modeButton').addEventListener('click', () => {
-//     if (mode === 'transform') {
-//         mode = 'select';
-//         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-//                scene.onPointerDown = onSelectNode;  // Enable node selection
-//     } else {
-//         mode = 'transform';
-//         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
-//         scene.onPointerDown = null;  // Disable node selection
-//     }
-// });
-
-// // Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
-// window.addEventListener('keydown', (event) => {
-//     if (event.key === 'D' || event.key === 'd') {
-//         // Toggle the mode
-//         document.getElementById('modeButton').click();
-//     } else if (event.key === 'R' || event.key === 'r') {
-//         // Reset labels
-//         document.getElementById('resetButton').click();
-//     } else if (event.key === 's' && event.ctrlKey) {
-//         // Save labels with Ctrl+S
-//         event.preventDefault();  // Prevent browser's default save action
-//         document.getElementById('saveButton').click();
-//     } else if (event.key === '=') {
-//         // Increase node size via slider
-//         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
-//         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
-//     } else if (event.key === '-') {
-//         // Decrease node size via slider
-//         nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
-//         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
-//     }
-// });
-
-// // Add WebXR experience for VR exploration on Quest 2
-// async function enableVR() {
-//     const xr = await scene.createDefaultXRExperienceAsync({
-//         uiOptions: {
-//             sessionMode: "immersive-vr", // VR mode
-//             referenceSpaceType: "local-floor"
-//         },
-//         optionalFeatures: true // Enable optional WebXR features
-//     });
-
-//     // Optional: Add teleportation and movement
-//     xr.teleportation.addFloorMesh(scene); // Enable teleportation
-// }
-
-// // Enable VR when the page loads
-// enableVR();
-
-// // Resize event handler to keep canvas responsive
-// window.addEventListener('resize', () => {
-//     engine.resize();
-// });
-
-// // Initialize the scene and show the upload modal
-// initializeScene();
-// engine.runRenderLoop(() => {
-//     scene.render();
-// });
 
 
 
