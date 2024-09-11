@@ -1,4 +1,3 @@
-
 // Babylon.js setup
 let canvas = document.createElement('canvas');
 canvas.id = "renderCanvas";
@@ -20,6 +19,11 @@ let labeledNodesList = {};
 let labels = {};
 let nodeMeshes = [];
 let selectedNode = null; // Variable to store the currently selected node
+
+// Custom modal elements
+const customModal = document.getElementById('customModal');
+const dropdownMenu = document.getElementById('nodeLabel');
+customModal.style.display = 'none'; // Initially hidden
 
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -129,16 +133,26 @@ function initializeScene() {
     uploadModal.style.display = 'flex';
 }
 
+// Function to display the custom modal with the dropdown
+function showCustomModal() {
+    customModal.style.display = 'flex'; // Show custom modal
+}
+
+// Hide modal after setting the label
+function hideCustomModal() {
+    customModal.style.display = 'none'; // Hide custom modal
+}
+
 // Selection handler
 function onSelectNode() {
     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
         selectedNode = pickResult.pickedMesh;  // Store the selected node
-        alert("Node selected. Now choose a label from the dropdown and click 'Set Label'.");
+        showCustomModal();  // Show custom modal with dropdown
     }
 }
 
-// Set label button click event
+// Set label button click event in the custom modal
 document.getElementById('setLabelButton').addEventListener('click', () => {
     if (selectedNode) {
         let labelValue = document.getElementById('nodeLabel').value;
@@ -156,53 +170,10 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
         updateLabelList(selectedNode.id, labelText);
 
         selectedNode = null;  // Reset selected node after labeling
+        hideCustomModal();  // Hide the custom modal after setting the label
     } else {
         alert("Please select a node first.");
     }
-});
-
-// Save Button Functionality: Save labels as a JSON file
-document.getElementById('saveButton').addEventListener('click', () => {
-    const labeledNodes = [];
-
-    // Collect labeled nodes and their labels
-    for (let id in labeledNodesList) {
-        labeledNodes.push({
-            id: id,
-            label: labeledNodesList[id]
-        });
-    }
-
-    // Convert to JSON string
-    const jsonString = JSON.stringify({ labeledNodes }, null, 2);
-
-    // Create a Blob from the JSON string
-    const blob = new Blob([jsonString], { type: "application/json" });
-
-    // Create a link element to download the file
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "labeled_nodes.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);  // Clean up after download
-});
-
-// Reset Button Functionality: Properly dispose labels and reset the state
-document.getElementById('resetButton').addEventListener('click', () => {
-    labeledNodesList = {};
-
-    // Dispose of all label planes and GUI elements
-    for (let id in labels) {
-        labels[id].labelPlane.dispose();
-        labels[id].labelContainer.dispose();
-    }
-
-    // Clear the labels dictionary
-    labels = {};
-
-    // Clear the label list in the UI
-    document.getElementById('labelList').innerHTML = '';
 });
 
 // Mode Switch Button
@@ -249,9 +220,7 @@ engine.runRenderLoop(() => {
 // let labeledNodesList = {};
 // let labels = {};
 // let nodeMeshes = [];
-
-// // Add this global variable to store the currently selected node
-// let selectedNode = null;
+// let selectedNode = null; // Variable to store the currently selected node
 
 // // Babylon.js GUI for Labels
 // let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -361,7 +330,14 @@ engine.runRenderLoop(() => {
 //     uploadModal.style.display = 'flex';
 // }
 
-
+// // Selection handler
+// function onSelectNode() {
+//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
+//         selectedNode = pickResult.pickedMesh;  // Store the selected node
+//         alert("Node selected. Now choose a label from the dropdown and click 'Set Label'.");
+//     }
+// }
 
 // // Set label button click event
 // document.getElementById('setLabelButton').addEventListener('click', () => {
@@ -385,38 +361,6 @@ engine.runRenderLoop(() => {
 //         alert("Please select a node first.");
 //     }
 // });
-
-// // Modify onSelectNode to store the clicked node
-// function onSelectNode() {
-//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
-//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-//         selectedNode = pickResult.pickedMesh;  // Store the selected node
-//         alert("Node selected. Now choose a label from the dropdown and click 'Set Label'.");
-//     }
-// }
-
-
-// // // Selection handler
-// // function onSelectNode() {
-// //     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
-// //     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-// //         let clickedNode = pickResult.pickedMesh;
-// //         let labelText = prompt("Enter label for this node:");
-
-// //         if (labelText) {
-// //             if (labels[clickedNode.id]) {
-// //                 labels[clickedNode.id].labelPlane.dispose();
-// //                 labels[clickedNode.id].labelContainer.dispose();
-// //             }
-
-// //             // Create and store the new label
-// //             let label = createLabel(clickedNode, labelText);
-// //             labels[clickedNode.id] = label;
-// //             labeledNodesList[clickedNode.id] = labelText;
-// //             updateLabelList(clickedNode.id, labelText);
-// //         }
-// //     }
-// // }
 
 // // Save Button Functionality: Save labels as a JSON file
 // document.getElementById('saveButton').addEventListener('click', () => {
@@ -467,11 +411,11 @@ engine.runRenderLoop(() => {
 //     if (mode === 'transform') {
 //         mode = 'select';
 //         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-//         scene.onPointerDown = onSelectNode;
+//         scene.onPointerDown = onSelectNode;  // Enable node selection
 //     } else {
 //         mode = 'transform';
 //         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
-//         scene.onPointerDown = null;
+//         scene.onPointerDown = null;  // Disable node selection
 //     }
 // });
 
