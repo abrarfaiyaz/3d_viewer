@@ -229,12 +229,18 @@ function showCustomModal() {
 function hideCustomModal() {
     customModal.style.display = 'none'; // Hide custom modal
 }
-
 // Selection handler
 function onSelectNode() {
     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
         selectedNode = pickResult.pickedMesh;  // Store the selected node
+        
+        // Check if the node is already labeled
+        if (labeledNodesList[selectedNode.id]) {
+            alert("This node is already labeled.");
+            return;  // Exit function if the node is already labeled
+        }
+
         showCustomModal();  // Show custom modal with dropdown
     }
 }
@@ -245,9 +251,10 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
         let labelValue = document.getElementById('nodeLabel').value;
         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
 
-        if (labels[selectedNode.id]) {
-            labels[selectedNode.id].labelPlane.dispose();
-            labels[selectedNode.id].labelContainer.dispose();
+        // Check again before creating a label to avoid multiple labels for the same node
+        if (labeledNodesList[selectedNode.id]) {
+            alert("This node is already labeled.");
+            return;  // Exit function if the node is already labeled
         }
 
         // Create and store the new label
@@ -262,6 +269,39 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
         alert("Please select a node first.");
     }
 });
+
+// // Selection handler
+// function onSelectNode() {
+//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
+//         selectedNode = pickResult.pickedMesh;  // Store the selected node
+//         showCustomModal();  // Show custom modal with dropdown
+//     }
+// }
+
+// // Set label button click event in the custom modal
+// document.getElementById('setLabelButton').addEventListener('click', () => {
+//     if (selectedNode) {
+//         let labelValue = document.getElementById('nodeLabel').value;
+//         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+
+//         if (labels[selectedNode.id]) {
+//             labels[selectedNode.id].labelPlane.dispose();
+//             labels[selectedNode.id].labelContainer.dispose();
+//         }
+
+//         // Create and store the new label
+//         let label = createLabel(selectedNode, labelText);
+//         labels[selectedNode.id] = label;
+//         labeledNodesList[selectedNode.id] = labelText;
+//         updateLabelList(selectedNode.id, labelText);
+
+//         selectedNode = null;  // Reset selected node after labeling
+//         hideCustomModal();  // Hide the custom modal after setting the label
+//     } else {
+//         alert("Please select a node first.");
+//     }
+// });
 
 // Mode Switch Button
 document.getElementById('modeButton').addEventListener('click', () => {
