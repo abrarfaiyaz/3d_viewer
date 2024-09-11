@@ -12,7 +12,7 @@ scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
 
-let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0), scene);
 
 let mode = 'transform';
 let labeledNodesList = {}; // Object to store labeled nodes
@@ -32,7 +32,7 @@ function createLabel(node, text) {
     let label = new BABYLON.GUI.TextBlock();
     label.text = text;
     label.color = "red";
-    label.fontSize = 14;  // Reduced font size to 14
+    label.fontSize = 16;  // Reduced font size to 14
     label.outlineWidth = 2;
     label.outlineColor = "black";
     
