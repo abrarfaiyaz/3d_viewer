@@ -32,13 +32,13 @@ function createLabel(node, text) {
     let label = new BABYLON.GUI.TextBlock();
     label.text = text;
     label.color = "white";
-    label.fontSize = 20;
+    label.fontSize = 14;  // Reduced font size to 14
     label.outlineWidth = 2;
     label.outlineColor = "black";
     
     let labelContainer = new BABYLON.GUI.Rectangle();
-    labelContainer.width = "100px";
-    labelContainer.height = "40px";
+    labelContainer.width = "200px"; // Adjusted container width to 200px
+    labelContainer.height = "20px"; // Adjusted container height to 20px
     labelContainer.thickness = 0;
     labelContainer.addControl(label);
     
@@ -81,7 +81,7 @@ function createGraph(data) {
     });
 }
 
-// Function to save labels as JSON
+// Function to save labels as JSON with labelText included
 function saveLabelsAsJSON() {
     const labeledNodes = [];
 
@@ -89,7 +89,7 @@ function saveLabelsAsJSON() {
     for (let id in labeledNodesList) {
         labeledNodes.push({
             id: id,
-            label: labeledNodesList[id]
+            labelText: labeledNodesList[id],  // Save both id and labelText
         });
     }
 
