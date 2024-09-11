@@ -78,14 +78,33 @@ function createGraph(data) {
         nodeMeshes.push(node);
     });
 
+    // // Create Edges (Lines)
+    // data.edges.forEach(edgeData => {
+    //     let fromNode = nodeMeshes[edgeData.from];
+    //     let toNode = nodeMeshes[edgeData.to];
+    //     BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
+    //         points: [fromNode.position, toNode.position]
+    //     }, scene);
+    // });
+
     // Create Edges (Lines)
     data.edges.forEach(edgeData => {
-        let fromNode = nodeMeshes[edgeData.from];
-        let toNode = nodeMeshes[edgeData.to];
-        BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
-            points: [fromNode.position, toNode.position]
-        }, scene);
-    });
+    let fromNode = nodeMeshes[edgeData.from];
+    let toNode = nodeMeshes[edgeData.to];
+
+    // Create a line between nodes
+    let line = BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
+        points: [fromNode.position, toNode.position]
+    }, scene);
+
+    // Create a material for the lines
+    let lineMaterial = new BABYLON.StandardMaterial(`lineMaterial${edgeData.from}-${edgeData.to}`, scene);
+    lineMaterial.emissiveColor = new BABYLON.Color3(0, 1, 0);  // Set the line color (green in this case)
+
+    // Assign the material to the line
+    line.color = new BABYLON.Color3(0, 1, 0);  // You can also use this for simple lines
+    line.material = lineMaterial;
+});
 }
 
 // Function to save labels as JSON with labelText included
