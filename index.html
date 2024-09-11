@@ -97,7 +97,12 @@
     <!-- Add the slider for adjusting node diameter -->
     <input type="range" id="nodeSizeSlider" min="1" max="6" value="6">
     <label for="nodeSizeSlider">Node Size</label>
-    <label for="traceUpload" class="trace-upload-button">Upload Trace File</label>
+   <!-- Add TraceUpload button -->
+    <label for="traceUpload" class="trace-upload-button" style="padding: 10px; background-color: #333; color: white; cursor: pointer; border-radius: 5px; text-align: center; display: inline-block;">
+        Upload Trace File
+    </label>
+    <input type="file" id="traceUpload" accept=".swc" style="display: none;">
+
 
 
 </div>
