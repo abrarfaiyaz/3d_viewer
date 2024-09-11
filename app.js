@@ -71,7 +71,7 @@ function createGraph(data) {
     
     // Create Nodes
     data.nodes.forEach(nodeData => {
-        let node = BABYLON.MeshBuilder.CreateSphere(`${nodeData.id}`, { diameter: 1 }, scene);
+        let node = BABYLON.MeshBuilder.CreateSphere(`${nodeData.id}`, { diameter: 5 }, scene);
         node.position = new BABYLON.Vector3(nodeData.x, nodeData.y, nodeData.z);
         nodeMeshes.push(node);
     });
