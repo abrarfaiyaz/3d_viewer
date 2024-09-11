@@ -31,7 +31,7 @@ let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI"
 function createLabel(node, text) {
     let label = new BABYLON.GUI.TextBlock();
     label.text = text;
-    label.color = "white";
+    label.color = "red";
     label.fontSize = 14;  // Reduced font size to 14
     label.outlineWidth = 2;
     label.outlineColor = "black";
