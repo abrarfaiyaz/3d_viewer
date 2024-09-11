@@ -13,8 +13,8 @@ scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
 
-// Create light
-let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+// Create light (changed light to come from the opposite side)
+let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0), scene);
 
 // Variables for labeling
 let mode = 'transform';
@@ -139,6 +139,15 @@ document.getElementById('saveButton').addEventListener('click', () => {
 // Event listener for "Reset" button
 document.getElementById('resetButton').addEventListener('click', () => {
     resetLabels();  // Reset all labels when the button is clicked
+});
+
+// Add an event listener to adjust node sizes via the slider
+document.getElementById('nodeSizeSlider').addEventListener('input', (event) => {
+    let newDiameter = parseFloat(event.target.value);
+
+    nodeMeshes.forEach(node => {
+        node.scaling = new BABYLON.Vector3(newDiameter / 6, newDiameter / 6, newDiameter / 6);
+    });
 });
 
 // Load default graph from graph_data.json
@@ -278,6 +287,10 @@ engine.runRenderLoop(() => {
 });
 
 
+
+
+
+
 // // Babylon.js setup
 // let canvas = document.createElement('canvas');
 // canvas.id = "renderCanvas";
@@ -289,11 +302,14 @@ engine.runRenderLoop(() => {
 // // Set background to black
 // scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
-// let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 20, new BABYLON.Vector3(0, 0, 0), scene);
+// // Create camera
+// let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 4, 50, new BABYLON.Vector3(0, 0, 0), scene);
 // camera.attachControl(canvas, true);
 
-// let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0), scene);
+// // Create light
+// let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
+// // Variables for labeling
 // let mode = 'transform';
 // let labeledNodesList = {}; // Object to store labeled nodes
 // let labels = {};
@@ -311,8 +327,8 @@ engine.runRenderLoop(() => {
 // function createLabel(node, text) {
 //     let label = new BABYLON.GUI.TextBlock();
 //     label.text = text;
-//     label.color = "red";
-//     label.fontSize = 16;  // Reduced font size to 14
+//     label.color = "white";
+//     label.fontSize = 14;  // Reduced font size to 14
 //     label.outlineWidth = 2;
 //     label.outlineColor = "black";
     
@@ -320,10 +336,12 @@ engine.runRenderLoop(() => {
 //     labelContainer.width = "200px"; // Adjusted container width to 200px
 //     labelContainer.height = "20px"; // Adjusted container height to 20px
 //     labelContainer.thickness = 0;
+//     labelContainer.background = "rgba(0, 0, 0, 0.5)"; // Optional: semi-transparent background
 //     labelContainer.addControl(label);
     
 //     let labelPlane = BABYLON.MeshBuilder.CreatePlane("labelPlane", { size: 2 }, scene);
 //     labelPlane.position = node.position.clone();
+//     labelPlane.position.y += 1.5; // Position label above the node
     
 //     advancedTexture.addControl(labelContainer);
 //     labelContainer.linkWithMesh(labelPlane);
@@ -346,7 +364,7 @@ engine.runRenderLoop(() => {
     
 //     // Create Nodes
 //     data.nodes.forEach(nodeData => {
-//         let node = BABYLON.MeshBuilder.CreateSphere(`${nodeData.id}`, { diameter: 1 }, scene);
+//         let node = BABYLON.MeshBuilder.CreateSphere(`${nodeData.id}`, { diameter: 6 }, scene);
 //         node.position = new BABYLON.Vector3(nodeData.x, nodeData.y, nodeData.z);
 //         nodeMeshes.push(node);
 //     });
@@ -524,6 +542,23 @@ engine.runRenderLoop(() => {
 //     }
 // });
 
+// // Add WebXR experience for VR exploration on Quest 2
+// async function enableVR() {
+//     const xr = await scene.createDefaultXRExperienceAsync({
+//         uiOptions: {
+//             sessionMode: "immersive-vr", // VR mode
+//             referenceSpaceType: "local-floor"
+//         },
+//         optionalFeatures: true // Enable optional WebXR features
+//     });
+
+//     // Optional: Add teleportation and movement
+//     xr.teleportation.addFloorMesh(scene); // Enable teleportation
+// }
+
+// // Enable VR when the page loads
+// enableVR();
+
 // // Resize event handler to keep canvas responsive
 // window.addEventListener('resize', () => {
 //     engine.resize();
@@ -534,3 +569,4 @@ engine.runRenderLoop(() => {
 // engine.runRenderLoop(() => {
 //     scene.render();
 // });
+
