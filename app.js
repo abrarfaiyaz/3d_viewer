@@ -340,6 +340,8 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
         labeledNodesList[selectedNode.id] = labelText;
         updateLabelList(selectedNode.id, labelText);
 
+        // let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+        setLabelForNode(selectedNode, labelText);
         selectedNode = null;  // Reset selected node after labeling
         hideCustomModal();  // Hide the custom modal after setting the label
     } else {
@@ -377,17 +379,17 @@ function setLabelForNode(node, labelText) {
 }
 
 // Example use in setLabelButton event listener
-document.getElementById('setLabelButton').addEventListener('click', () => {
-    if (selectedNode) {
-        let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-        setLabelForNode(selectedNode, labelText);
+// document.getElementById('setLabelButton').addEventListener('click', () => {
+//     if (selectedNode) {
+//         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+//         setLabelForNode(selectedNode, labelText);
 
-        selectedNode = null;
-        hideCustomModal();
-    } else {
-        alert("Please select a node first.");
-    }
-});
+//         selectedNode = null;
+//         hideCustomModal();
+//     } else {
+//         alert("Please select a node first.");
+//     }
+// });
 
 
 // Function to suggest unused labels
