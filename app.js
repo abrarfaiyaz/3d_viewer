@@ -348,6 +348,70 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
 });
 
 
+
+// test start chatgpt function to suggest next labelling
+// List of all available labels
+const availableLabels = [
+    "ICA_Root_L", "ICA_Root_R", "ICA-MCA-ACA_L", "ICA-MCA-ACA_R", 
+    "A1-A2_L", "A1-A2_R", "M1-M2_L", "M1-M2_R", 
+    "OA-ICA_L", "OA-ICA_R", "OA_L", "OA_R", 
+    "M2-M3_L", "M2-M3_R", "VA_Root_L", "VA_Root_R", 
+    "BA-VA", "PCA-BA", "P1-P2-Pcomm_L", "P1-P2-Pcomm_R", 
+    "Pcomm-ICA_L", "Pcomm-ICA_R"
+];
+
+// Track used labels
+let usedLabels = new Set();  // Use a set to store labels that are already applied
+
+function setLabelForNode(node, labelText) {
+    // Add the label to the used labels set
+    usedLabels.add(labelText);
+
+    // Create the label for the node
+    let label = createLabel(node, labelText);
+    labels[node.id] = label;
+    labeledNodesList[node.id] = labelText;
+
+    // Update the label list in the UI
+    updateLabelList(node.id, labelText);
+}
+
+// Example use in setLabelButton event listener
+document.getElementById('setLabelButton').addEventListener('click', () => {
+    if (selectedNode) {
+        let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+        setLabelForNode(selectedNode, labelText);
+
+        selectedNode = null;
+        hideCustomModal();
+    } else {
+        alert("Please select a node first.");
+    }
+});
+
+
+// Function to suggest unused labels
+function suggestUnusedLabel() {
+    // Find the first label from availableLabels that is not in usedLabels
+    let suggestedLabel = availableLabels.find(label => !usedLabels.has(label));
+
+    if (suggestedLabel) {
+        alert(`Suggested Label: ${suggestedLabel}`);
+    } else {
+        alert("All labels have been used.");
+    }
+}
+
+// Add event listener for the "L" or "l" shortcut key
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'L' || event.key === 'l') {
+        suggestUnusedLabel();  // Call suggestion function
+    }
+});
+// test end chatgpt
+
+
+
 // // Selection handler
 // function onSelectNode() {
 //     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
