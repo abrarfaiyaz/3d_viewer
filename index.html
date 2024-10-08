@@ -89,14 +89,25 @@
         </div>
     </div>
     
-   <div class="button-container">
-    <button class="mode-button" id="modeButton">Switch to Selection Mode</button>
-    <button class="reset-button" id="resetButton">Reset</button>
-    <button class="save-button" id="saveButton">Save Labels</button>
+    <div class="button-container">
+        <button class="mode-button" id="modeButton">Switch to Selection Mode</button>
+        <button class="reset-button" id="resetButton">Reset</button>
+        <button class="save-button" id="saveButton">Save Labels</button>
+        <button class="load-button" id="loadButton">Load Labels</button> <!-- New button to load labels -->
+        <input type="file" id="labelFileInput" accept=".json" style="display: none;"> <!-- Hidden file input -->
+        <input type="range" id="nodeSizeSlider" min="1" max="6" value="6">
+    
+    </div>
+    
+
+   <!-- <div class="button-container"> -->
+    <!-- <button class="mode-button" id="modeButton">Switch to Selection Mode</button> -->
+    <!-- <button class="reset-button" id="resetButton">Reset</button> -->
+    <!-- <button class="save-button" id="saveButton">Save Labels</button> -->
 
     <!-- Add the slider for adjusting node diameter -->
-    <input type="range" id="nodeSizeSlider" min="1" max="6" value="6">
-    <label for="nodeSizeSlider">Node Size</label>
+    <!-- <input type="range" id="nodeSizeSlider" min="1" max="6" value="6"> -->
+    <!-- <label for="nodeSizeSlider">Node Size</label> -->
    <!-- Add TraceUpload button -->
 <!--     <label for="traceUpload" class="trace-upload-button" style="padding: 10px; background-color: #333; color: white; cursor: pointer; border-radius: 5px; text-align: center; display: inline-block;">
         Upload Trace File
@@ -105,7 +116,7 @@
 
 
 
-</div>
+<!-- </div> -->
     
     <div id="labelListContainer">
         <h3>Labeled Nodes</h3>

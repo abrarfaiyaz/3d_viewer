@@ -130,6 +130,56 @@ function saveLabelsAsJSON() {
     document.body.removeChild(link);  // Clean up after download
 }
 
+
+//new function from chatgpt-
+// Get references to the new load button and hidden file input
+const loadButton = document.getElementById('loadButton');
+const labelFileInput = document.getElementById('labelFileInput');
+
+// Event listener to trigger file input when "Load Labels" button is clicked
+loadButton.addEventListener('click', () => {
+    labelFileInput.click();  // Trigger file input dialog
+});
+
+// Event listener for handling the uploaded file
+labelFileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                loadLabelsFromJSON(data);  // Apply the labels to the nodes
+            } catch (error) {
+                console.error("Error parsing JSON file:", error);
+                alert("Invalid JSON file format.");
+            }
+        };
+        reader.readAsText(file);
+    }
+});
+
+// Function to load labels from JSON and update the scene
+function loadLabelsFromJSON(data) {
+    data.labeledNodes.forEach(labeledNode => {
+        const nodeId = labeledNode.id;
+        const labelText = labeledNode.labelText;
+
+        // Find the node by id in the existing nodeMeshes array
+        const node = nodeMeshes.find(n => n.id === nodeId);
+        if (node) {
+            // Create and store the new label for the node
+            let label = createLabel(node, labelText);
+            labels[nodeId] = label;
+            labeledNodesList[nodeId] = labelText;
+
+            // Update the label list in the UI
+            updateLabelList(nodeId, labelText);
+        }
+    });
+}
+
+
 // Function to reset labels
 function resetLabels() {
     // Remove all labels from the labeledNodesList
