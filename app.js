@@ -137,9 +137,19 @@ const loadButton = document.getElementById('loadButton');
 const labelFileInput = document.getElementById('labelFileInput');
 
 // Event listener to trigger file input when "Load Labels" button is clicked
+// loadButton.addEventListener('click', () => {
+//     labelFileInput.click();  // Trigger file input dialog
+// });
+
+// Add both click and touch event listeners to the button
 loadButton.addEventListener('click', () => {
     labelFileInput.click();  // Trigger file input dialog
 });
+
+loadButton.addEventListener('touchend', () => {
+    labelFileInput.click();  // Trigger file input dialog
+});
+
 
 // Event listener for handling the uploaded file
 labelFileInput.addEventListener('change', (event) => {
