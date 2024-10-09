@@ -372,7 +372,7 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
         let label = createLabel(selectedNode, labelText);
         labels[selectedNode.id] = label;
         labeledNodesList[selectedNode.id] = labelText;
-        updateLabelList(selectedNode.id, labelText);
+        // updateLabelList(selectedNode.id, labelText);
 
         // let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
         setLabelForNode(selectedNode, labelText);
