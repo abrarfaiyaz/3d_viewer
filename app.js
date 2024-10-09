@@ -170,21 +170,55 @@ labelFileInput.addEventListener('change', (event) => {
 });
 
 // Function to load labels from JSON and update the scene
+// function loadLabelsFromJSON(data) {
+//     data.labeledNodes.forEach(labeledNode => {
+//         const nodeId = labeledNode.id;
+//         const labelText = labeledNode.labelText;
+
+//         // Find the node by id in the existing nodeMeshes array
+//         const node = nodeMeshes.find(n => n.id === nodeId);
+//         if (node) {
+//             // Create and store the new label for the node
+//             let label = createLabel(node, labelText);
+//             labels[nodeId] = label;
+//             labeledNodesList[nodeId] = labelText;
+
+//             // Update the label list in the UI
+//             updateLabelList(nodeId, labelText);
+//         }
+//     });
+// }
+//test chatgpt function for updating the available list of variables when loading some predone labels
 function loadLabelsFromJSON(data) {
+    console.log("Loading labels from JSON:", data);
+
     data.labeledNodes.forEach(labeledNode => {
         const nodeId = labeledNode.id;
         const labelText = labeledNode.labelText;
 
         // Find the node by id in the existing nodeMeshes array
-        const node = nodeMeshes.find(n => n.id === nodeId);
+        const node = nodeMeshes.find(n => n.id === String(nodeId));
         if (node) {
-            // Create and store the new label for the node
+            console.log(`Found node ${nodeId}, applying label: ${labelText}`);
+
+            // Create the label for the node
             let label = createLabel(node, labelText);
             labels[nodeId] = label;
             labeledNodesList[nodeId] = labelText;
 
+            // Update the usedLabels set and remove from availableLabels
+            usedLabels.add(labelText);
+
+            // Remove the label from availableLabels if it's used
+            const labelIndex = availableLabels.indexOf(labelText);
+            if (labelIndex !== -1) {
+                availableLabels.splice(labelIndex, 1); // Remove the label from availableLabels
+            }
+
             // Update the label list in the UI
             updateLabelList(nodeId, labelText);
+        } else {
+            console.error(`Node ${nodeId} not found!`);
         }
     });
 }
