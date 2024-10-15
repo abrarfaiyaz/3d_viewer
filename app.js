@@ -350,7 +350,18 @@ function onSelectNode() {
     }
 }
 
-// Function to remove a label from the UI list
+// Function to remove a label from the UI list (***)
+// function removeLabelFromUI(nodeId) {
+//     let labelList = document.getElementById('labelList');
+//     let items = labelList.getElementsByTagName('li');
+//     for (let i = 0; i < items.length; i++) {
+//         if (items[i].innerText.startsWith(`Node ${nodeId}:`)) {
+//             labelList.removeChild(items[i]);  // Remove the list item for the node
+//             break;
+//         }
+//     }
+// }
+
 function removeLabelFromUI(nodeId) {
     let labelList = document.getElementById('labelList');
     let items = labelList.getElementsByTagName('li');
@@ -362,26 +373,88 @@ function removeLabelFromUI(nodeId) {
     }
 }
 
-// Set label button click event in the custom modal
+
+// Set label button click event in the custom modal (***)
+// document.getElementById('setLabelButton').addEventListener('click', () => {
+//     if (selectedNode) {
+//         let labelValue = document.getElementById('nodeLabel').value;
+//         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+
+//         // Create and store the new label
+//         let label = createLabel(selectedNode, labelText);
+//         labels[selectedNode.id] = label;
+//         labeledNodesList[selectedNode.id] = labelText;
+//         // updateLabelList(selectedNode.id, labelText);
+
+//         // let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+//         setLabelForNode(selectedNode, labelText);
+//         selectedNode = null;  // Reset selected node after labeling
+//         hideCustomModal();  // Hide the custom modal after setting the label
+//     } else {
+//         alert("Please select a node first.");
+//     }
+// });
+
 document.getElementById('setLabelButton').addEventListener('click', () => {
     if (selectedNode) {
         let labelValue = document.getElementById('nodeLabel').value;
         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
 
-        // Create and store the new label
-        let label = createLabel(selectedNode, labelText);
-        labels[selectedNode.id] = label;
-        labeledNodesList[selectedNode.id] = labelText;
-        // updateLabelList(selectedNode.id, labelText);
+        // If the label is "Undefined"
+        if (labelText === "Undefined") {
+            // Remove the label if it exists
+            if (labels[selectedNode.id]) {
+                labels[selectedNode.id].labelPlane.dispose();
+                labels[selectedNode.id].labelContainer.dispose();
+                delete labels[selectedNode.id]; // Remove from the labels dictionary
+            }
 
-        // let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-        setLabelForNode(selectedNode, labelText);
+            // Remove from the labeled]NodesList if it exists
+            if (labeledNodesList[selectedNode.id]) {
+                // Add the previous label back to availableLabels
+                const previousLabelText = labeledNodesList[selectedNode.id];
+                usedLabels.delete(previousLabelText);  // Remove from used labels
+                availableLabels.push(previousLabelText); // Add back to available labels
+
+                delete labeledNodesList[selectedNode.id]; // Remove from labeled nodes list
+                removeLabelFromUI(selectedNode.id); // Remove from UI list
+            }
+        } else {
+            // Check if the node already had a label
+            if (labeledNodesList[selectedNode.id]) {
+                const previousLabelText = labeledNodesList[selectedNode.id];
+                // Remove the previous label before setting the new one
+                labels[selectedNode.id].labelPlane.dispose();
+                labels[selectedNode.id].labelContainer.dispose();
+                usedLabels.delete(previousLabelText); // Remove from used labels
+                availableLabels.push(previousLabelText); // Add back the previous label
+            }
+
+            // Create and store the new label
+            let label = createLabel(selectedNode, labelText);
+            labels[selectedNode.id] = label;
+            labeledNodesList[selectedNode.id] = labelText;
+
+            // Mark the new label as used
+            usedLabels.add(labelText);
+
+            // Remove the new label from availableLabels
+            const labelIndex = availableLabels.indexOf(labelText);
+            if (labelIndex !== -1) {
+                availableLabels.splice(labelIndex, 1); // Remove the label from availableLabels
+            }
+
+            // Update the label list in the UI
+            updateLabelList(selectedNode.id, labelText);
+        }
+
         selectedNode = null;  // Reset selected node after labeling
         hideCustomModal();  // Hide the custom modal after setting the label
     } else {
         alert("Please select a node first.");
     }
 });
+
 
 
 
