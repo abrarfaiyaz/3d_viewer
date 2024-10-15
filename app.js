@@ -519,6 +519,25 @@ window.addEventListener('keydown', (event) => {
 });
 // test end chatgpt
 
+let labelsVisible = true;  // Track the visibility of the labels (default is visible)
+function toggleLabelVisibility() {
+    labelsVisible = !labelsVisible;  // Toggle the visibility flag
+
+    // Loop through all labels and toggle their visibility
+    for (let id in labels) {
+        if (labelsVisible) {
+            labels[id].labelContainer.isVisible = true;  // Show label
+        } else {
+            labels[id].labelContainer.isVisible = false;  // Hide label
+        }
+    }
+}
+// Add event listener for "H" or "h" key to toggle label visibility
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'H' || event.key === 'h') {
+        toggleLabelVisibility();  // Call the toggle function when "H" is pressed
+    }
+});
 
 
 // // Selection handler
