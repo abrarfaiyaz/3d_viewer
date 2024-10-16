@@ -621,13 +621,15 @@ function handleFileUpload(file) {
         try {
             const data = JSON.parse(event.target.result);
 
-            // Extract the first 6 characters of the file name as the subject name
-            const fileName = file.name;
-            subjectName = fileName.substring(0, 6);  // Get first 6 characters
-            document.getElementById('subjectNameHeader').innerText = `${subjectName} Nodes`;  // Update UI
+            // Extract the first six characters of the filename as the subject name
+            subjectName = file.name.substring(0, 6);  // Get first 6 characters of the filename
 
-            // Proceed with creating the graph from the JSON data
+            // Update the <h3> tag inside #labelListContainer with the subject name
+            document.getElementById('subjectNameHeader').innerText = `${subjectName} Nodes`;
+
+            // Proceed with creating the graph
             createGraph(data);
+
         } catch (error) {
             console.error("Invalid JSON format:", error);
             alert("The uploaded file is not a valid JSON file. Please try again.");
@@ -665,6 +667,7 @@ function saveLabelsAsJSON() {
     link.click();
     document.body.removeChild(link);  // Clean up after download
 }
+
 
 
 
