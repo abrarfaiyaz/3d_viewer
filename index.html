@@ -76,6 +76,15 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        .subject-name-container {
+            position: absolute;
+            top: 50px;  /* Adjust positioning based on your layout */
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -117,7 +126,10 @@
 
 
 <!-- </div> -->
-    
+    <div class="subject-name-container">
+        <h3 id="subjectName">Subject: N/A</h3>
+    </div>
+
     <div id="labelListContainer">
         <h3>Labeled Nodes</h3>
         <ul id="labelList"></ul>

@@ -104,31 +104,31 @@ data.edges.forEach(edgeData => {
 }
 
 // Function to save labels as JSON with labelText included
-function saveLabelsAsJSON() {
-    const labeledNodes = [];
+// function saveLabelsAsJSON() {
+//     const labeledNodes = [];
 
-    // Collect labeled nodes and their labels
-    for (let id in labeledNodesList) {
-        labeledNodes.push({
-            id: id,
-            labelText: labeledNodesList[id],  // Save both id and labelText
-        });
-    }
+//     // Collect labeled nodes and their labels
+//     for (let id in labeledNodesList) {
+//         labeledNodes.push({
+//             id: id,
+//             labelText: labeledNodesList[id],  // Save both id and labelText
+//         });
+//     }
 
-    // Convert to JSON string
-    const jsonString = JSON.stringify({ labeledNodes }, null, 2);
+//     // Convert to JSON string
+//     const jsonString = JSON.stringify({ labeledNodes }, null, 2);
 
-    // Create a Blob from the JSON string
-    const blob = new Blob([jsonString], { type: "application/json" });
+//     // Create a Blob from the JSON string
+//     const blob = new Blob([jsonString], { type: "application/json" });
 
-    // Create a link element to download the file
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "labeled_nodes.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);  // Clean up after download
-}
+//     // Create a link element to download the file
+//     const link = document.createElement("a");
+//     link.href = URL.createObjectURL(blob);
+//     link.download = "labeled_nodes.json";
+//     document.body.appendChild(link);
+//     link.click();
+//     document.body.removeChild(link);  // Clean up after download
+// }
 
 
 //new function from chatgpt-
@@ -274,19 +274,19 @@ async function loadDefaultGraph() {
 }
 
 // Handle uploaded file
-function handleFileUpload(file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const data = JSON.parse(event.target.result);
-            createGraph(data);
-        } catch (error) {
-            console.error("Invalid JSON format:", error);
-            alert("The uploaded file is not a valid JSON file. Please try again.");
-        }
-    };
-    reader.readAsText(file);
-}
+// function handleFileUpload(file) {
+//     const reader = new FileReader();
+//     reader.onload = (event) => {
+//         try {
+//             const data = JSON.parse(event.target.result);
+//             createGraph(data);
+//         } catch (error) {
+//             console.error("Invalid JSON format:", error);
+//             alert("The uploaded file is not a valid JSON file. Please try again.");
+//         }
+//     };
+//     reader.readAsText(file);
+// }
 
 // Modal and upload elements
 const uploadModal = document.getElementById('uploadModal');
@@ -608,6 +608,68 @@ window.addEventListener('keydown', (event) => {
         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
     }
 });
+
+
+// Adding this for the sake of tracking subject names
+let subjectName = "";  // Variable to store the subject name
+
+function handleFileUpload(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+
+            // Extract subject name from file name (assuming "R03XXXX_graph_data.json" format)
+            const fileName = file.name;
+            const nameMatch = fileName.match(/(R03\d+)_graph_data\.json/);
+            if (nameMatch && nameMatch[1]) {
+                subjectName = nameMatch[1];  // Extracted subject name
+                document.getElementById('subjectName').innerText = `Subject: ${subjectName}`;  // Update UI
+            } else {
+                alert("Invalid file name format.");
+                return;
+            }
+
+            createGraph(data);  // Proceed with creating the graph
+        } catch (error) {
+            console.error("Invalid JSON format:", error);
+            alert("The uploaded file is not a valid JSON file. Please try again.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+function saveLabelsAsJSON() {
+    const labeledNodes = [];
+
+    // Collect labeled nodes and their labels
+    for (let id in labeledNodesList) {
+        labeledNodes.push({
+            id: id,
+            labelText: labeledNodesList[id],  // Save both id and labelText
+        });
+    }
+
+    // Convert to JSON string
+    const jsonString = JSON.stringify({ labeledNodes }, null, 2);
+
+    // Create a Blob from the JSON string
+    const blob = new Blob([jsonString], { type: "application/json" });
+
+    // Use subjectName for the filename
+    const fileName = subjectName ? `${subjectName}_labeled_nodes.json` : "labeled_nodes.json";
+
+    // Create a link element to download the file
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);  // Clean up after download
+}
+
+
+
 
 // Add WebXR experience for VR exploration on Quest 2
 async function enableVR() {
