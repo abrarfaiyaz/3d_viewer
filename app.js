@@ -622,7 +622,7 @@ function handleFileUpload(file) {
             const data = JSON.parse(event.target.result);
 
             // Extract the first six characters of the filename as the subject name
-            subjectName = file.name.substring(0, 6);  // Get first 6 characters of the filename
+            subjectName = file.name.substring(0, 7);  // Get first 7 characters of the filename
 
             // Update the <h3> tag inside #labelListContainer with the subject name
             document.getElementById('subjectNameHeader').innerText = `${subjectName} Nodes`;
