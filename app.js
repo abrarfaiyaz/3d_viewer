@@ -611,6 +611,8 @@ window.addEventListener('keydown', (event) => {
 
 
 // Adding this for the sake of tracking subject names
+// let subjectName = "";  // Variable to store the subject name
+
 let subjectName = "";  // Variable to store the subject name
 
 function handleFileUpload(file) {
@@ -619,18 +621,13 @@ function handleFileUpload(file) {
         try {
             const data = JSON.parse(event.target.result);
 
-            // Extract subject name from file name (assuming "R03XXXX_graph_data.json" format)
+            // Extract the first 6 characters of the file name as the subject name
             const fileName = file.name;
-            const nameMatch = fileName.match(/(R03\d+)_graph_data\.json/);
-            if (nameMatch && nameMatch[1]) {
-                subjectName = nameMatch[1];  // Extracted subject name
-                document.getElementById('subjectName').innerText = `Subject: ${subjectName}`;  // Update UI
-            } else {
-                alert("Invalid file name format.");
-                return;
-            }
+            subjectName = fileName.substring(0, 6);  // Get first 6 characters
+            document.getElementById('subjectNameHeader').innerText = `${subjectName} Nodes`;  // Update UI
 
-            createGraph(data);  // Proceed with creating the graph
+            // Proceed with creating the graph from the JSON data
+            createGraph(data);
         } catch (error) {
             console.error("Invalid JSON format:", error);
             alert("The uploaded file is not a valid JSON file. Please try again.");
@@ -638,6 +635,7 @@ function handleFileUpload(file) {
     };
     reader.readAsText(file);
 }
+
 
 function saveLabelsAsJSON() {
     const labeledNodes = [];
@@ -667,6 +665,7 @@ function saveLabelsAsJSON() {
     link.click();
     document.body.removeChild(link);  // Clean up after download
 }
+
 
 
 
