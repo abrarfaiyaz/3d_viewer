@@ -323,16 +323,63 @@ function showCustomModal() {
 function hideCustomModal() {
     customModal.style.display = 'none'; // Hide custom modal
 }
+// Function to change the color of the selected node
+function changeNodeColor(node, color) {
+    if (!node.material) {
+        node.material = new BABYLON.StandardMaterial(`mat-${node.id}`, scene);
+    }
+    node.material.diffuseColor = color;
+}
+
+// Update your `onSelectNode` function to change the color of the selected node
+// function onSelectNode() {
+//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
+//         selectedNode = pickResult.pickedMesh;  // Store the selected node
+
+//         // Reset previously selected node's color (optional)
+//         if (selectedNode && selectedNode.originalColor) {
+//             changeNodeColor(selectedNode, selectedNode.originalColor);
+//         }
+
+//         // Save the original color if it hasn't been saved yet
+//         if (!selectedNode.originalColor) {
+//             selectedNode.originalColor = selectedNode.material ? selectedNode.material.diffuseColor : new BABYLON.Color3(1, 1, 1); // Default to white
+//         }
+
+//         // Change the color of the selected node to indicate selection
+//         changeNodeColor(selectedNode, new BABYLON.Color3(1, 0, 0));  // Set to red for selection
+
+//         // Optionally, you can call showCustomModal() to show the modal if a node is selected
+//         showCustomModal();  // Show custom modal with dropdown if needed
+//     }
+// }
 // Selection handler
 function onSelectNode() {
     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-        selectedNode = pickResult.pickedMesh;  // Store the selected node
-        
+        selectedNode = pickResult.pickedMesh;  // Store the newly selected node
+
+        // Reset the color of the previously selected node
+        if (previouslySelectedNode && previouslySelectedNode !== selectedNode) {
+            changeNodeColor(previouslySelectedNode, previouslySelectedNode.originalColor || new BABYLON.Color3(1, 1, 1));  // Default back to white if no original color
+        }
+
+        // Save the original color if it hasn't been saved yet
+        if (!selectedNode.originalColor) {
+            selectedNode.originalColor = selectedNode.material ? selectedNode.material.diffuseColor : new BABYLON.Color3(1, 1, 1); // Default to white
+        }
+
+        // Change the color of the selected node to indicate selection
+        changeNodeColor(selectedNode, new BABYLON.Color3(1, 0, 0));  // Set to red for selection
+
+        // Store this node as the previously selected node for future resets
+        previouslySelectedNode = selectedNode;
+
         // Check if the node is already labeled
         if (labeledNodesList[selectedNode.id]) {
-            // Ask the user if they want to relabel the node
-            let confirmRelabel = confirm("This node is already labeled. Do you want to relabel it?");
+            // Ask the user if they want to relabel the node, including the node ID in the message
+            let confirmRelabel = confirm(`Node ID# ${selectedNode.id} is already labeled. Do you want to relabel it?`);
             if (confirmRelabel) {
                 // Remove the previous label before relabeling
                 labels[selectedNode.id].labelPlane.dispose();
@@ -349,6 +396,45 @@ function onSelectNode() {
         }
     }
 }
+
+// function onSelectNode() {
+//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
+//         selectedNode = pickResult.pickedMesh;  // Store the selected node
+//         ///////////////////
+//         // Reset previously selected node's color (optional)
+//         if (selectedNode && selectedNode.originalColor) {
+//             changeNodeColor(selectedNode, selectedNode.originalColor);
+//         }
+
+//         // Save the original color if it hasn't been saved yet
+//         if (!selectedNode.originalColor) {
+//             selectedNode.originalColor = selectedNode.material ? selectedNode.material.diffuseColor : new BABYLON.Color3(1, 1, 1); // Default to white
+//         }
+
+//         // Change the color of the selected node to indicate selection
+//         changeNodeColor(selectedNode, new BABYLON.Color3(1, 0, 0));  // Set to red for selection
+//         /////////////////
+//         // Check if the node is already labeled
+//         if (labeledNodesList[selectedNode.id]) {
+//             // Ask the user if they want to relabel the node
+//             let confirmRelabel = confirm("This node is already labeled. Do you want to relabel it?");
+//             if (confirmRelabel) {
+//                 // Remove the previous label before relabeling
+//                 labels[selectedNode.id].labelPlane.dispose();
+//                 labels[selectedNode.id].labelContainer.dispose();
+//                 delete labels[selectedNode.id];  // Remove the label from the labels dictionary
+                
+//                 // Also remove the previous label from the UI list
+//                 removeLabelFromUI(selectedNode.id);
+                
+//                 showCustomModal();  // Show custom modal to relabel
+//             }
+//         } else {
+//             showCustomModal();  // Show custom modal with dropdown if not labeled yet
+//         }
+//     }
+// }
 
 // Function to remove a label from the UI list (***)
 // function removeLabelFromUI(nodeId) {
