@@ -354,7 +354,10 @@ function changeNodeColor(node, color) {
 //         showCustomModal();  // Show custom modal with dropdown if needed
 //     }
 // }
+
 // Selection handler
+let previouslySelectedNode = null;
+
 function onSelectNode() {
     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
