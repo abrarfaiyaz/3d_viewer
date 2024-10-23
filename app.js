@@ -614,38 +614,62 @@ function saveLabelsAsJSON() {
 let guideMesh; // Declare a global variable to store the guide mesh
 
 
+// function createGuide(meshData) {
+//         // Extract vertices and faces from the JSON file
+//         const vertices = meshData.vertices.flat(); // Flatten the vertices array
+//         const faces = meshData.faces.flat();       // Flatten the faces array
+
+//         // Create a new mesh in Babylon.js
+//         const customMesh = new BABYLON.Mesh("custom", scene);
+//         const vertexData = new BABYLON.VertexData();
+
+//         vertexData.positions = vertices;
+//         vertexData.indices = faces;
+
+//         // Apply vertex data to the mesh
+//         vertexData.applyToMesh(customMesh);
+
+//         // Set material with transparency
+//         const material = new BABYLON.StandardMaterial("material", scene);
+//         material.alpha = 0.2; // Set transparency
+//         material.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.8); // Green color for visibility
+//         customMesh.material = material;
+
+//         // Optionally scale and position the mesh
+//         // customMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+//         customMesh.position = new BABYLON.Vector3(0, 0, 0);
+
+//         // Render loop
+//         // engine.runRenderLoop(function () {
+//         //     scene.render();
+//         // });
+//     }
+
 function createGuide(meshData) {
-        // Extract vertices and faces from the JSON file
-        const vertices = meshData.vertices.flat(); // Flatten the vertices array
-        const faces = meshData.faces.flat();       // Flatten the faces array
+    // Extract vertices and faces from the JSON file
+    const vertices = meshData.vertices.flat(); // Flatten the vertices array
+    const faces = meshData.faces.flat();       // Flatten the faces array
 
-        // Create a new mesh in Babylon.js
-        const customMesh = new BABYLON.Mesh("custom", scene);
-        const vertexData = new BABYLON.VertexData();
+    // Create a new mesh in Babylon.js
+    guideMesh = new BABYLON.Mesh("guide", scene); // Store the mesh in the global variable
+    const vertexData = new BABYLON.VertexData();
 
-        vertexData.positions = vertices;
-        vertexData.indices = faces;
+    vertexData.positions = vertices;
+    vertexData.indices = faces;
 
-        // Apply vertex data to the mesh
-        vertexData.applyToMesh(customMesh);
+    // Apply vertex data to the mesh
+    vertexData.applyToMesh(guideMesh);
 
-        // Set material with transparency
-        const material = new BABYLON.StandardMaterial("material", scene);
-        material.alpha = 0.2; // Set transparency
-        material.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.8); // Green color for visibility
-        customMesh.material = material;
+    // Set material with transparency
+    const material = new BABYLON.StandardMaterial("material", scene);
+    material.alpha = 0.2; // Set transparency
+    material.diffuseColor = new BABYLON.Color3(0.8, 0.8, 1); // Gray color for visibility
+    guideMesh.material = material;
 
-        // Optionally scale and position the mesh
-        // customMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
-        customMesh.position = new BABYLON.Vector3(0, 0, 0);
-
-        // Render loop
-        // engine.runRenderLoop(function () {
-        //     scene.render();
-        // });
-    }
-
-
+    // Optionally scale and position the mesh
+    // guideMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+    guideMesh.position = new BABYLON.Vector3(0, 0, 0);
+}
 
 // Function to toggle the visibility of the guide
 function toggleGuideVisibility() {
@@ -709,9 +733,8 @@ shortcutWindow.style.borderRadius = '5px';
 shortcutWindow.style.zIndex = '1000';
 shortcutWindow.style.display = 'none';  // Initially hidden
 shortcutWindow.innerHTML = `
-    <h4>Keyboard Shortcuts</h4>
+    <h3>Keyboard Shortcuts</h3>
     <ul>
-        <li><strong>D</strong>: Toggle mode</li>
         <li><strong>R</strong>: Reset labels</li>
         <li><strong>Ctrl + S</strong>: Save labels</li>
         <li><strong>=</strong>: Increase node size</li>
