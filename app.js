@@ -724,7 +724,7 @@ engine.runRenderLoop(() => {
 // Create a div for displaying shortcut instructions
 const shortcutWindow = document.createElement('div');
 shortcutWindow.style.position = 'fixed';
-shortcutWindow.style.top = '10px';
+shortcutWindow.style.bottom = '20px';
 shortcutWindow.style.left = '10px';
 shortcutWindow.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
 shortcutWindow.style.color = 'black';
@@ -733,7 +733,7 @@ shortcutWindow.style.borderRadius = '5px';
 shortcutWindow.style.zIndex = '1000';
 shortcutWindow.style.display = 'none';  // Initially hidden
 shortcutWindow.innerHTML = `
-    <h3>Keyboard Shortcuts</h3>
+    <h2>Keyboard Shortcuts</h2>
     <ul>
         <li><strong>R</strong>: Reset labels</li>
         <li><strong>Ctrl + S</strong>: Save labels</li>
