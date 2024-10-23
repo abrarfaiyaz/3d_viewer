@@ -454,12 +454,8 @@ function suggestUnusedLabel() {
     }
 }
 
-// Add event listener for the "L" or "l" shortcut key
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'L' || event.key === 'l') {
-        suggestUnusedLabel();  // Call suggestion function
-    }
-});
+
+
 // test end chatgpt
 
 let labelsVisible = true;  // Track the visibility of the labels (default is visible)
@@ -475,12 +471,7 @@ function toggleLabelVisibility() {
         }
     }
 }
-// Add event listener for "H" or "h" key to toggle label visibility
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'H' || event.key === 'h') {
-        toggleLabelVisibility();  // Call the toggle function when "H" is pressed
-    }
-});
+
 
 let selectedEdge = null;  // Variable to store the selected edge
 let savedEdges = [];  // Array to store the node pairs of confirmed edges
@@ -541,31 +532,6 @@ document.getElementById('edgeModeButton').addEventListener('click', () => {
     mode = 'edge';
     scene.onPointerDown = onSelectEdge;
     updateActiveButton('edgeModeButton');  // Update button styles
-});
-
-
-
-// Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'D' || event.key === 'd') {
-        // Toggle the mode
-        document.getElementById('modeButton').click();
-    } else if (event.key === 'R' || event.key === 'r') {
-        // Reset labels
-        document.getElementById('resetButton').click();
-    } else if (event.key === 's' && event.ctrlKey) {
-        // Save labels with Ctrl+S
-        event.preventDefault();  // Prevent browser's default save action
-        document.getElementById('saveButton').click();
-    } else if (event.key === '=') {
-        // Increase node size via slider
-        nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
-        nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
-    } else if (event.key === '-') {
-        // Decrease node size via slider
-        nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
-        nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
-    }
 });
 
 
@@ -645,6 +611,9 @@ function saveLabelsAsJSON() {
 //     reader.onload = function (e) {
 //         const contents = e.target.result;
 //         const meshData = JSON.parse(contents);
+let guideMesh; // Declare a global variable to store the guide mesh
+
+
 function createGuide(meshData) {
         // Extract vertices and faces from the JSON file
         const vertices = meshData.vertices.flat(); // Flatten the vertices array
@@ -675,6 +644,17 @@ function createGuide(meshData) {
         //     scene.render();
         // });
     }
+
+
+
+// Function to toggle the visibility of the guide
+function toggleGuideVisibility() {
+    if (guideMesh) {
+        guideMesh.setEnabled(!guideMesh.isEnabled()); // Toggle visibility
+    }
+}
+
+
 
 //     reader.readAsText(file); // Read the JSON file as text
 // }
@@ -717,7 +697,126 @@ engine.runRenderLoop(() => {
     scene.render();
 });
 
+// Create a div for displaying shortcut instructions
+const shortcutWindow = document.createElement('div');
+shortcutWindow.style.position = 'fixed';
+shortcutWindow.style.top = '10px';
+shortcutWindow.style.left = '10px';
+shortcutWindow.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+shortcutWindow.style.color = 'black';
+shortcutWindow.style.padding = '10px';
+shortcutWindow.style.borderRadius = '5px';
+shortcutWindow.style.zIndex = '1000';
+shortcutWindow.style.display = 'none';  // Initially hidden
+shortcutWindow.innerHTML = `
+    <h4>Keyboard Shortcuts</h4>
+    <ul>
+        <li><strong>D</strong>: Toggle mode</li>
+        <li><strong>R</strong>: Reset labels</li>
+        <li><strong>Ctrl + S</strong>: Save labels</li>
+        <li><strong>=</strong>: Increase node size</li>
+        <li><strong>-</strong>: Decrease node size</li>
+        <li><strong>H</strong>: Toggle label visibility</li>
+        <li><strong>L</strong>: Suggest unused label</li>
+        <li><strong>G</strong>: Toggle guide visibility</li>
+        <li><strong>Escape</strong>: Show this shortcut list</li>
+    </ul>
+`;
+document.body.appendChild(shortcutWindow);  // Add it to the document body
 
+// Flag to track Escape key press
+let escapePressed = false;
+
+// Single event listener for all keyboard shortcuts
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'D' || event.key === 'd') {
+        // Toggle the mode
+        document.getElementById('modeButton').click();
+    } else if (event.key === 'R' || event.key === 'r') {
+        // Reset labels
+        document.getElementById('resetButton').click();
+    } else if (event.key === 's' && event.ctrlKey) {
+        // Save labels with Ctrl+S
+        event.preventDefault();  // Prevent browser's default save action
+        document.getElementById('saveButton').click();
+    } else if (event.key === '=') {
+        // Increase node size via slider
+        nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
+        nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+    } else if (event.key === '-') {
+        // Decrease node size via slider
+        nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
+        nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+    } else if (event.key === 'H' || event.key === 'h') {
+        // Toggle label visibility
+        toggleLabelVisibility();
+    } else if (event.key === 'L' || event.key === 'l') {
+        // Suggest unused label
+        suggestUnusedLabel();
+    } else if (event.key === 'g' || event.key === 'G') {
+        // Toggle guide visibility
+        toggleGuideVisibility();
+    } else if (event.key === 'Escape') {
+        // Show the shortcut list when Escape is pressed
+        if (!escapePressed) {
+            escapePressed = true;
+            shortcutWindow.style.display = 'block';  // Show the shortcut list
+        }
+    }
+});
+
+// Event listener to hide the shortcut list when Escape is released
+window.addEventListener('keyup', (event) => {
+    if (event.key === 'Escape') {
+        escapePressed = false;
+        shortcutWindow.style.display = 'none';  // Hide the shortcut list
+    }
+});
+
+
+//Old handling of shortcuts
+// // Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
+// window.addEventListener('keydown', (event) => {
+//     if (event.key === 'D' || event.key === 'd') {
+//         // Toggle the mode
+//         document.getElementById('modeButton').click();
+//     } else if (event.key === 'R' || event.key === 'r') {
+//         // Reset labels
+//         document.getElementById('resetButton').click();
+//     } else if (event.key === 's' && event.ctrlKey) {
+//         // Save labels with Ctrl+S
+//         event.preventDefault();  // Prevent browser's default save action
+//         document.getElementById('saveButton').click();
+//     } else if (event.key === '=') {
+//         // Increase node size via slider
+//         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
+//         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+//     } else if (event.key === '-') {
+//         // Decrease node size via slider
+//         nodeSizeSlider.value = Math.max(parseInt(nodeSizeSlider.value) - 1, 1);  // Decrement and cap at 1
+//         nodeSizeSlider.dispatchEvent(new Event('input'));  // Trigger the input event
+//     }
+// });
+// // Add event listener for "H" or "h" key to toggle label visibility
+// window.addEventListener('keydown', (event) => {
+//     if (event.key === 'H' || event.key === 'h') {
+//         toggleLabelVisibility();  // Call the toggle function when "H" is pressed
+//     }
+// });
+
+// // Add event listener for the "L" or "l" shortcut key
+// window.addEventListener('keydown', (event) => {
+//     if (event.key === 'L' || event.key === 'l') {
+//         suggestUnusedLabel();  // Call suggestion function
+//     }
+// });
+
+// // Add event listener to detect 'g' or 'G' key press
+// window.addEventListener('keydown', function(event) {
+//     if (event.key === 'g' || event.key === 'G') {
+//         toggleGuideVisibility();
+//     }
+// });
 
 
 
