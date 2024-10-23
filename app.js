@@ -742,20 +742,21 @@ shortcutWindow.innerHTML = `
         <li><strong>H</strong>: Toggle label visibility</li>
         <li><strong>L</strong>: Suggest unused label</li>
         <li><strong>G</strong>: Toggle guide visibility</li>
-        <li><strong>Escape</strong>: Show this shortcut list</li>
+        <li><strong>TAB</strong>: Show this shortcut list</li>
     </ul>
 `;
 document.body.appendChild(shortcutWindow);  // Add it to the document body
 
-// Flag to track Escape key press
-let escapePressed = false;
+// Flag to track Tab key press
+let tabPressed = false;
 
 // Single event listener for all keyboard shortcuts
 window.addEventListener('keydown', (event) => {
-    if (event.key === 'D' || event.key === 'd') {
-        // Toggle the mode
-        document.getElementById('modeButton').click();
-    } else if (event.key === 'R' || event.key === 'r') {
+    // if (event.key === 'D' || event.key === 'd') {
+    //     // Toggle the mode
+    //     document.getElementById('modeButton').click();
+    // } else 
+    if (event.key === 'R' || event.key === 'r') {
         // Reset labels
         document.getElementById('resetButton').click();
     } else if (event.key === 's' && event.ctrlKey) {
@@ -779,19 +780,20 @@ window.addEventListener('keydown', (event) => {
     } else if (event.key === 'g' || event.key === 'G') {
         // Toggle guide visibility
         toggleGuideVisibility();
-    } else if (event.key === 'Escape') {
-        // Show the shortcut list when Escape is pressed
-        if (!escapePressed) {
-            escapePressed = true;
+    } else if (event.key === 'Tab') {
+        // Show the shortcut list when Tab is pressed
+        if (!tabPressed) {
+            tabPressed = true;
+            event.preventDefault();  // Prevent default Tab behavior
             shortcutWindow.style.display = 'block';  // Show the shortcut list
         }
     }
 });
 
-// Event listener to hide the shortcut list when Escape is released
+// Event listener to hide the shortcut list when Tab is released
 window.addEventListener('keyup', (event) => {
-    if (event.key === 'Escape') {
-        escapePressed = false;
+    if (event.key === 'Tab') {
+        tabPressed = false;
         shortcutWindow.style.display = 'none';  // Hide the shortcut list
     }
 });
