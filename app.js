@@ -78,17 +78,9 @@ function createGraph(data) {
         nodeMeshes.push(node);
     });
 
-    // // Create Edges (Lines)
-    // data.edges.forEach(edgeData => {
-    //     let fromNode = nodeMeshes[edgeData.from];
-    //     let toNode = nodeMeshes[edgeData.to];
-    //     BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
-    //         points: [fromNode.position, toNode.position]
-    //     }, scene);
-    // });
 
     // Create Edges (Lines)
-data.edges.forEach(edgeData => {
+    data.edges.forEach(edgeData => {
     let fromNode = nodeMeshes[edgeData.from];
     let toNode = nodeMeshes[edgeData.to];
 
@@ -103,32 +95,7 @@ data.edges.forEach(edgeData => {
 });
 }
 
-// Function to save labels as JSON with labelText included
-// function saveLabelsAsJSON() {
-//     const labeledNodes = [];
 
-//     // Collect labeled nodes and their labels
-//     for (let id in labeledNodesList) {
-//         labeledNodes.push({
-//             id: id,
-//             labelText: labeledNodesList[id],  // Save both id and labelText
-//         });
-//     }
-
-//     // Convert to JSON string
-//     const jsonString = JSON.stringify({ labeledNodes }, null, 2);
-
-//     // Create a Blob from the JSON string
-//     const blob = new Blob([jsonString], { type: "application/json" });
-
-//     // Create a link element to download the file
-//     const link = document.createElement("a");
-//     link.href = URL.createObjectURL(blob);
-//     link.download = "labeled_nodes.json";
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);  // Clean up after download
-// }
 
 
 //new function from chatgpt-
@@ -169,25 +136,6 @@ labelFileInput.addEventListener('change', (event) => {
     }
 });
 
-// Function to load labels from JSON and update the scene
-// function loadLabelsFromJSON(data) {
-//     data.labeledNodes.forEach(labeledNode => {
-//         const nodeId = labeledNode.id;
-//         const labelText = labeledNode.labelText;
-
-//         // Find the node by id in the existing nodeMeshes array
-//         const node = nodeMeshes.find(n => n.id === nodeId);
-//         if (node) {
-//             // Create and store the new label for the node
-//             let label = createLabel(node, labelText);
-//             labels[nodeId] = label;
-//             labeledNodesList[nodeId] = labelText;
-
-//             // Update the label list in the UI
-//             updateLabelList(nodeId, labelText);
-//         }
-//     });
-// }
 //test chatgpt function for updating the available list of variables when loading some predone labels
 function loadLabelsFromJSON(data) {
     console.log("Loading labels from JSON:", data);
@@ -331,29 +279,6 @@ function changeNodeColor(node, color) {
     node.material.diffuseColor = color;
 }
 
-// Update your `onSelectNode` function to change the color of the selected node
-// function onSelectNode() {
-//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
-//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-//         selectedNode = pickResult.pickedMesh;  // Store the selected node
-
-//         // Reset previously selected node's color (optional)
-//         if (selectedNode && selectedNode.originalColor) {
-//             changeNodeColor(selectedNode, selectedNode.originalColor);
-//         }
-
-//         // Save the original color if it hasn't been saved yet
-//         if (!selectedNode.originalColor) {
-//             selectedNode.originalColor = selectedNode.material ? selectedNode.material.diffuseColor : new BABYLON.Color3(1, 1, 1); // Default to white
-//         }
-
-//         // Change the color of the selected node to indicate selection
-//         changeNodeColor(selectedNode, new BABYLON.Color3(1, 0, 0));  // Set to red for selection
-
-//         // Optionally, you can call showCustomModal() to show the modal if a node is selected
-//         showCustomModal();  // Show custom modal with dropdown if needed
-//     }
-// }
 
 // Selection handler
 let previouslySelectedNode = null;
@@ -400,56 +325,6 @@ function onSelectNode() {
     }
 }
 
-// function onSelectNode() {
-//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
-//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-//         selectedNode = pickResult.pickedMesh;  // Store the selected node
-//         ///////////////////
-//         // Reset previously selected node's color (optional)
-//         if (selectedNode && selectedNode.originalColor) {
-//             changeNodeColor(selectedNode, selectedNode.originalColor);
-//         }
-
-//         // Save the original color if it hasn't been saved yet
-//         if (!selectedNode.originalColor) {
-//             selectedNode.originalColor = selectedNode.material ? selectedNode.material.diffuseColor : new BABYLON.Color3(1, 1, 1); // Default to white
-//         }
-
-//         // Change the color of the selected node to indicate selection
-//         changeNodeColor(selectedNode, new BABYLON.Color3(1, 0, 0));  // Set to red for selection
-//         /////////////////
-//         // Check if the node is already labeled
-//         if (labeledNodesList[selectedNode.id]) {
-//             // Ask the user if they want to relabel the node
-//             let confirmRelabel = confirm("This node is already labeled. Do you want to relabel it?");
-//             if (confirmRelabel) {
-//                 // Remove the previous label before relabeling
-//                 labels[selectedNode.id].labelPlane.dispose();
-//                 labels[selectedNode.id].labelContainer.dispose();
-//                 delete labels[selectedNode.id];  // Remove the label from the labels dictionary
-                
-//                 // Also remove the previous label from the UI list
-//                 removeLabelFromUI(selectedNode.id);
-                
-//                 showCustomModal();  // Show custom modal to relabel
-//             }
-//         } else {
-//             showCustomModal();  // Show custom modal with dropdown if not labeled yet
-//         }
-//     }
-// }
-
-// Function to remove a label from the UI list (***)
-// function removeLabelFromUI(nodeId) {
-//     let labelList = document.getElementById('labelList');
-//     let items = labelList.getElementsByTagName('li');
-//     for (let i = 0; i < items.length; i++) {
-//         if (items[i].innerText.startsWith(`Node ${nodeId}:`)) {
-//             labelList.removeChild(items[i]);  // Remove the list item for the node
-//             break;
-//         }
-//     }
-// }
 
 function removeLabelFromUI(nodeId) {
     let labelList = document.getElementById('labelList');
@@ -462,27 +337,6 @@ function removeLabelFromUI(nodeId) {
     }
 }
 
-
-// Set label button click event in the custom modal (***)
-// document.getElementById('setLabelButton').addEventListener('click', () => {
-//     if (selectedNode) {
-//         let labelValue = document.getElementById('nodeLabel').value;
-//         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-
-//         // Create and store the new label
-//         let label = createLabel(selectedNode, labelText);
-//         labels[selectedNode.id] = label;
-//         labeledNodesList[selectedNode.id] = labelText;
-//         // updateLabelList(selectedNode.id, labelText);
-
-//         // let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-//         setLabelForNode(selectedNode, labelText);
-//         selectedNode = null;  // Reset selected node after labeling
-//         hideCustomModal();  // Hide the custom modal after setting the label
-//     } else {
-//         alert("Please select a node first.");
-//     }
-// });
 
 document.getElementById('setLabelButton').addEventListener('click', () => {
     if (selectedNode) {
@@ -628,54 +482,6 @@ window.addEventListener('keydown', (event) => {
     }
 });
 
-
-// // Selection handler
-// function onSelectNode() {
-//     let pickResult = scene.pick(scene.pointerX, scene.pointerY);
-//     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
-//         selectedNode = pickResult.pickedMesh;  // Store the selected node
-//         showCustomModal();  // Show custom modal with dropdown
-//     }
-// }
-
-// // Set label button click event in the custom modal
-// document.getElementById('setLabelButton').addEventListener('click', () => {
-//     if (selectedNode) {
-//         let labelValue = document.getElementById('nodeLabel').value;
-//         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
-
-//         if (labels[selectedNode.id]) {
-//             labels[selectedNode.id].labelPlane.dispose();
-//             labels[selectedNode.id].labelContainer.dispose();
-//         }
-
-//         // Create and store the new label
-//         let label = createLabel(selectedNode, labelText);
-//         labels[selectedNode.id] = label;
-//         labeledNodesList[selectedNode.id] = labelText;
-//         updateLabelList(selectedNode.id, labelText);
-
-//         selectedNode = null;  // Reset selected node after labeling
-//         hideCustomModal();  // Hide the custom modal after setting the label
-//     } else {
-//         alert("Please select a node first.");
-//     }
-// });
-
-// Mode Switch Button (change-edge-afaiyaz)
-// document.getElementById('modeButton').addEventListener('click', () => {
-//     if (mode === 'transform') {
-//         mode = 'select';
-//         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-//                scene.onPointerDown = onSelectNode;  // Enable node selection
-//     } else {
-//         mode = 'transform';
-//         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
-//         scene.onPointerDown = null;  // Disable node selection
-//     }
-// });
-// let currentMode = 'transform';  // Default mode- already has a variable for that
-
 let selectedEdge = null;  // Variable to store the selected edge
 let savedEdges = [];  // Array to store the node pairs of confirmed edges
 
@@ -783,6 +589,9 @@ function handleFileUpload(file) {
             // Proceed with creating the graph
             createGraph(data);
 
+            // Proceed with creating the guide
+            createGuide(data);
+
         } catch (error) {
             console.error("Invalid JSON format:", error);
             alert("The uploaded file is not a valid JSON file. Please try again.");
@@ -791,36 +600,7 @@ function handleFileUpload(file) {
     reader.readAsText(file);
 }
 
-
-// function saveLabelsAsJSON() {
-//     const labeledNodes = [];
-
-//     // Collect labeled nodes and their labels
-//     for (let id in labeledNodesList) {
-//         labeledNodes.push({
-//             id: id,
-//             labelText: labeledNodesList[id],  // Save both id and labelText
-//         });
-//     }
-
-//     // Convert to JSON string
-//     const jsonString = JSON.stringify({ labeledNodes }, null, 2);
-
-//     // Create a Blob from the JSON string
-//     const blob = new Blob([jsonString], { type: "application/json" });
-
-//     // Use subjectName for the filename
-//     const fileName = subjectName ? `${subjectName}_labeled_nodes.json` : "labeled_nodes.json";
-
-//     // Create a link element to download the file
-//     const link = document.createElement("a");
-//     link.href = URL.createObjectURL(blob);
-//     link.download = fileName;
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);  // Clean up after download
-// }
-
+//save nodes and deleted edges both.
 function saveLabelsAsJSON() {
     const labeledNodes = [];
 
@@ -856,27 +636,75 @@ function saveLabelsAsJSON() {
     document.body.removeChild(link);  // Clean up after download
 }
 
+// upload guide mesh
+// function handleFileUpload(event) {
+//     const file = event.target.files[0];
+//     if (!file) return;
+
+//     const reader = new FileReader();
+//     reader.onload = function (e) {
+//         const contents = e.target.result;
+//         const meshData = JSON.parse(contents);
+function createGuide(meshData) {
+        // Extract vertices and faces from the JSON file
+        const vertices = meshData.vertices.flat(); // Flatten the vertices array
+        const faces = meshData.faces.flat();       // Flatten the faces array
+
+        // Create a new mesh in Babylon.js
+        const customMesh = new BABYLON.Mesh("custom", scene);
+        const vertexData = new BABYLON.VertexData();
+
+        vertexData.positions = vertices;
+        vertexData.indices = faces;
+
+        // Apply vertex data to the mesh
+        vertexData.applyToMesh(customMesh);
+
+        // Set material with transparency
+        const material = new BABYLON.StandardMaterial("material", scene);
+        material.alpha = 0.2; // Set transparency
+        material.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.8); // Green color for visibility
+        customMesh.material = material;
+
+        // Optionally scale and position the mesh
+        customMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+        customMesh.position = new BABYLON.Vector3(0, 0, 0);
+
+        // Render loop
+        // engine.runRenderLoop(function () {
+        //     scene.render();
+        // });
+    }
+
+//     reader.readAsText(file); // Read the JSON file as text
+// }
+
+// // Trigger the file input when the button is clicked
+// document.getElementById("uploadButton").addEventListener("click", function() {
+//     document.getElementById("fileInput").click();
+// });
+
+// // Handle file input change event (file selection)
+// document.getElementById("fileInput").addEventListener("change", handleFileUpload);
 
 
 
+// // Add WebXR experience for VR exploration on Quest 2
+// async function enableVR() {
+//     const xr = await scene.createDefaultXRExperienceAsync({
+//         uiOptions: {
+//             sessionMode: "immersive-vr", // VR mode
+//             referenceSpaceType: "local-floor"
+//         },
+//         optionalFeatures: true // Enable optional WebXR features
+//     });
 
+//     // Optional: Add teleportation and movement
+//     xr.teleportation.addFloorMesh(scene); // Enable teleportation
+// }
 
-// Add WebXR experience for VR exploration on Quest 2
-async function enableVR() {
-    const xr = await scene.createDefaultXRExperienceAsync({
-        uiOptions: {
-            sessionMode: "immersive-vr", // VR mode
-            referenceSpaceType: "local-floor"
-        },
-        optionalFeatures: true // Enable optional WebXR features
-    });
-
-    // Optional: Add teleportation and movement
-    xr.teleportation.addFloorMesh(scene); // Enable teleportation
-}
-
-// Enable VR when the page loads
-enableVR();
+// // Enable VR when the page loads
+// enableVR();
 
 // Resize event handler to keep canvas responsive
 window.addEventListener('resize', () => {
