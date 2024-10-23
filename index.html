@@ -29,6 +29,15 @@
             border-radius: 5px;
             width: 150px;
         }
+        .toggle-button-group {
+            position: fixed;  /* Fixes the position relative to the viewport */
+            bottom: 20px;     /* 20px from the bottom */
+            right: 20px;      /* 20px from the right */
+            display: flex;
+            gap: 10px;        /* Adds space between buttons */
+            z-index: 1000;    /* Ensures it's on top of other content */
+        }
+
         .mode-button {
             padding: 10px 20px;
             border: 1px solid #ccc;
@@ -43,10 +52,11 @@
         }
 
         .mode-button.active {
-            background-color: #007bff;  /* Change to a highlighted color */
+            background-color: #007bff;  /* Highlight color */
             color: white;
             border-color: #007bff;
         }
+
 
 
         #labelListContainer {
