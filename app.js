@@ -667,7 +667,7 @@ function createGuide(meshData) {
         customMesh.material = material;
 
         // Optionally scale and position the mesh
-        customMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
+        // customMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
         customMesh.position = new BABYLON.Vector3(0, 0, 0);
 
         // Render loop
