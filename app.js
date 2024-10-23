@@ -662,18 +662,82 @@ window.addEventListener('keydown', (event) => {
 //     }
 // });
 
-// Mode Switch Button
-document.getElementById('modeButton').addEventListener('click', () => {
-    if (mode === 'transform') {
-        mode = 'select';
-        document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
-               scene.onPointerDown = onSelectNode;  // Enable node selection
-    } else {
-        mode = 'transform';
-        document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
-        scene.onPointerDown = null;  // Disable node selection
+// Mode Switch Button (change-edge-afaiyaz)
+// document.getElementById('modeButton').addEventListener('click', () => {
+//     if (mode === 'transform') {
+//         mode = 'select';
+//         document.getElementById('modeButton').innerText = 'Switch to Transform Mode';
+//                scene.onPointerDown = onSelectNode;  // Enable node selection
+//     } else {
+//         mode = 'transform';
+//         document.getElementById('modeButton').innerText = 'Switch to Selection Mode';
+//         scene.onPointerDown = null;  // Disable node selection
+//     }
+// });
+// let currentMode = 'transform';  // Default mode- already has a variable for that
+
+let selectedEdge = null;  // Variable to store the selected edge
+let savedEdges = [];  // Array to store the node pairs of confirmed edges
+
+function onSelectEdge() {
+    let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    if (pickResult.hit && pickResult.pickedMesh && pickResult.pickedMesh.name.startsWith("line")) {
+        selectedEdge = pickResult.pickedMesh;
+
+        // Save the original color of the edge (assuming green)
+        let originalColor = selectedEdge.color.clone();
+
+        // Change the edge color to red to indicate selection
+        selectedEdge.color = new BABYLON.Color3(1, 0, 0);  // Red color
+
+        // Confirm deletion dialog
+        let confirmDelete = confirm("Are you sure to delete this edge? Press T to view guide before deleting.");
+        if (confirmDelete) {
+            // Change the edge color to black if confirmed
+            selectedEdge.color = new BABYLON.Color3(0, 0, 0);  // Black color
+
+            // Assuming edge name is formatted as 'line{from}-{to}', extract node pairs
+            let edgeName = selectedEdge.name;
+            let nodePair = edgeName.replace("line", "").split("-").map(Number);
+
+            // Save the node pairs
+            savedEdges.push(nodePair);  // Store the node pair [fromNode, toNode]
+            console.log("Saved edge between nodes:", nodePair);
+        } else {
+            // Restore the original color (green) if not confirmed
+            selectedEdge.color = originalColor;
+        }
     }
+}
+
+
+
+function updateActiveButton(buttonId) {
+    document.querySelectorAll('.mode-button').forEach(button => {
+        button.classList.remove('active');  // Remove active class from all buttons
+    });
+    document.getElementById(buttonId).classList.add('active');  // Add active class to the current button
+}
+
+document.getElementById('transformModeButton').addEventListener('click', () => {
+    mode = 'transform';
+    scene.onPointerDown = null;
+    updateActiveButton('transformModeButton');  // Update button styles
 });
+
+document.getElementById('nodeModeButton').addEventListener('click', () => {
+    mode = 'select';
+    scene.onPointerDown = onSelectNode;
+    updateActiveButton('nodeModeButton');  // Update button styles
+});
+
+document.getElementById('edgeModeButton').addEventListener('click', () => {
+    mode = 'edge';
+    scene.onPointerDown = onSelectEdge;
+    updateActiveButton('edgeModeButton');  // Update button styles
+});
+
+
 
 // Keyboard Shortcuts for D (toggle mode), R (reset), Ctrl+S (save), = (increase node size), and - (decrease node size)
 window.addEventListener('keydown', (event) => {
@@ -728,6 +792,35 @@ function handleFileUpload(file) {
 }
 
 
+// function saveLabelsAsJSON() {
+//     const labeledNodes = [];
+
+//     // Collect labeled nodes and their labels
+//     for (let id in labeledNodesList) {
+//         labeledNodes.push({
+//             id: id,
+//             labelText: labeledNodesList[id],  // Save both id and labelText
+//         });
+//     }
+
+//     // Convert to JSON string
+//     const jsonString = JSON.stringify({ labeledNodes }, null, 2);
+
+//     // Create a Blob from the JSON string
+//     const blob = new Blob([jsonString], { type: "application/json" });
+
+//     // Use subjectName for the filename
+//     const fileName = subjectName ? `${subjectName}_labeled_nodes.json` : "labeled_nodes.json";
+
+//     // Create a link element to download the file
+//     const link = document.createElement("a");
+//     link.href = URL.createObjectURL(blob);
+//     link.download = fileName;
+//     document.body.appendChild(link);
+//     link.click();
+//     document.body.removeChild(link);  // Clean up after download
+// }
+
 function saveLabelsAsJSON() {
     const labeledNodes = [];
 
@@ -739,14 +832,20 @@ function saveLabelsAsJSON() {
         });
     }
 
+    // Prepare data to save, including both labeled nodes and saved edges
+    const dataToSave = {
+        labeledNodes: labeledNodes,
+        savedEdges: savedEdges  // Include the saved edges (node pairs)
+    };
+
     // Convert to JSON string
-    const jsonString = JSON.stringify({ labeledNodes }, null, 2);
+    const jsonString = JSON.stringify(dataToSave, null, 2);
 
     // Create a Blob from the JSON string
     const blob = new Blob([jsonString], { type: "application/json" });
 
     // Use subjectName for the filename
-    const fileName = subjectName ? `${subjectName}_labeled_nodes.json` : "labeled_nodes.json";
+    const fileName = subjectName ? `${subjectName}_labeled_nodes_and_edges.json` : "labeled_nodes_and_edges.json";
 
     // Create a link element to download the file
     const link = document.createElement("a");
