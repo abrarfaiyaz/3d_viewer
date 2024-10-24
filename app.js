@@ -136,10 +136,12 @@ labelFileInput.addEventListener('change', (event) => {
     }
 });
 
-//test chatgpt function for updating the available list of variables when loading some predone labels
-function loadLabelsFromJSON(data) {
-    console.log("Loading labels from JSON:", data);
 
+// redo 
+function loadLabelsFromJSON(data) {
+    console.log("Loading labels and edges from JSON:", data);
+
+    // Load labeled nodes
     data.labeledNodes.forEach(labeledNode => {
         const nodeId = labeledNode.id;
         const labelText = labeledNode.labelText;
@@ -169,7 +171,68 @@ function loadLabelsFromJSON(data) {
             console.error(`Node ${nodeId} not found!`);
         }
     });
+
+    // Load saved edges and change their color to black
+    if (data.savedEdges && Array.isArray(data.savedEdges)) {
+        data.savedEdges.forEach(edge => {
+            if (edge.length === 2) {
+                savedEdges.push(edge);
+                console.log(`Saved edge between nodes: ${edge}`);
+
+                // Construct the edge name (assuming the format 'line{from}-{to}')
+                let edgeName = `line${edge[0]}-${edge[1]}`;
+
+                // Find the edge mesh by name
+                let edgeMesh = scene.getMeshByName(edgeName);
+
+                if (edgeMesh) {
+                    // Change the color of the edge to black
+                    edgeMesh.color = new BABYLON.Color3(0, 0, 0); // Black color
+                    console.log(`Edge ${edgeName} color changed to black.`);
+                } else {
+                    console.error(`Edge ${edgeName} not found in scene.`);
+                }
+            }
+        });
+    } else {
+        console.log("No saved edges found in JSON.");
+    }
 }
+
+//test chatgpt function for updating the available list of variables when loading some predone labels
+// function loadLabelsFromJSON(data) {
+//     console.log("Loading labels from JSON:", data);
+
+//     data.labeledNodes.forEach(labeledNode => {
+//         const nodeId = labeledNode.id;
+//         const labelText = labeledNode.labelText;
+
+//         // Find the node by id in the existing nodeMeshes array
+//         const node = nodeMeshes.find(n => n.id === String(nodeId));
+//         if (node) {
+//             console.log(`Found node ${nodeId}, applying label: ${labelText}`);
+
+//             // Create the label for the node
+//             let label = createLabel(node, labelText);
+//             labels[nodeId] = label;
+//             labeledNodesList[nodeId] = labelText;
+
+//             // Update the usedLabels set and remove from availableLabels
+//             usedLabels.add(labelText);
+
+//             // Remove the label from availableLabels if it's used
+//             const labelIndex = availableLabels.indexOf(labelText);
+//             if (labelIndex !== -1) {
+//                 availableLabels.splice(labelIndex, 1); // Remove the label from availableLabels
+//             }
+
+//             // Update the label list in the UI
+//             updateLabelList(nodeId, labelText);
+//         } else {
+//             console.error(`Node ${nodeId} not found!`);
+//         }
+//     });
+// }
 
 
 // Function to reset labels
