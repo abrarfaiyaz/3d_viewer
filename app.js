@@ -14,20 +14,178 @@ scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 // Create camera
 let camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, 50,  Math.PI / 4, new BABYLON.Vector3(0, 0, 0), scene);
 camera.attachControl(canvas, true);
+camera.wheelPrecision = 35;
+camera.panningSensibility = 70;
 
-// Create light (changed light to come from the opposite side)
-let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, -1, 0), scene);
+let homeCameraView = {
+    alpha: Math.PI / 2,
+    beta: Math.PI / 3,
+    radius: 260,
+    target: new BABYLON.Vector3(0, 0, 0)
+};
+
+function applyHomeCameraView(useAnimation = true) {
+    if (useAnimation) {
+        BABYLON.Animation.CreateAndStartAnimation("cameraHomeAlpha", camera, "alpha", 60, 20, camera.alpha, homeCameraView.alpha, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+        BABYLON.Animation.CreateAndStartAnimation("cameraHomeBeta", camera, "beta", 60, 20, camera.beta, homeCameraView.beta, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+        BABYLON.Animation.CreateAndStartAnimation("cameraHomeRadius", camera, "radius", 60, 20, camera.radius, homeCameraView.radius, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+        BABYLON.Animation.CreateAndStartAnimation("cameraHomeTarget", camera, "target", 60, 20, camera.target.clone(), homeCameraView.target.clone(), BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+    } else {
+        camera.alpha = homeCameraView.alpha;
+        camera.beta = homeCameraView.beta;
+        camera.radius = homeCameraView.radius;
+        camera.target = homeCameraView.target.clone();
+    }
+}
+
+function updateHomeCameraFromNodes() {
+    if (!nodeMeshes.length) {
+        return;
+    }
+
+    let min = nodeMeshes[0].position.clone();
+    let max = nodeMeshes[0].position.clone();
+
+    nodeMeshes.forEach(node => {
+        min = BABYLON.Vector3.Minimize(min, node.position);
+        max = BABYLON.Vector3.Maximize(max, node.position);
+    });
+
+    const center = min.add(max).scale(0.5);
+    const bounds = max.subtract(min);
+    const largestDimension = Math.max(bounds.x, bounds.y, bounds.z);
+
+    homeCameraView = {
+        alpha: Math.PI / 2,
+        beta: Math.PI / 3,
+        radius: Math.max(largestDimension * 1.6, 80),
+        target: center
+    };
+
+    camera.lowerRadiusLimit = Math.max(largestDimension * 0.08, 8);
+    camera.upperRadiusLimit = Math.max(largestDimension * 5, homeCameraView.radius * 2);
+    camera.minZ = 0.1;
+    camera.maxZ = Math.max(largestDimension * 10, 1000);
+    applyHomeCameraView(false);
+}
+
+// Screen-relative lighting keeps nodes readable while the user rotates the scene.
+let light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+light.intensity = 0.78;
+light.groundColor = new BABYLON.Color3(0.22, 0.24, 0.28);
+light.specular = new BABYLON.Color3(0.08, 0.08, 0.08);
+
+let screenTopLight = new BABYLON.DirectionalLight("screenTopLight", new BABYLON.Vector3(0, -1, 1), scene);
+screenTopLight.intensity = 0.62;
+screenTopLight.diffuse = new BABYLON.Color3(1, 0.98, 0.92);
+screenTopLight.specular = new BABYLON.Color3(0.22, 0.22, 0.22);
+
+function updateScreenFixedLighting() {
+    light.direction = camera.getDirection(BABYLON.Axis.Y).normalize();
+    screenTopLight.direction = camera.getDirection(new BABYLON.Vector3(0, -0.65, 1)).normalize();
+}
+
+const orientationCanvas = document.getElementById('orientationCanvas');
+const movementReference = document.getElementById('movementReference');
+const referenceToggleButton = document.getElementById('referenceToggleButton');
+let orientationEngine = null;
+let orientationScene = null;
+let orientationCamera = null;
+let orientationSphere = null;
+
+function createAxisLine(axisName, endPoint, color) {
+    const line = BABYLON.MeshBuilder.CreateLines(axisName, {
+        points: [BABYLON.Vector3.Zero(), endPoint]
+    }, orientationScene);
+    line.color = color;
+    return line;
+}
+
+function createAxisLabel(text, position, color) {
+    const plane = BABYLON.MeshBuilder.CreatePlane(`${text}Label`, { size: 0.85 }, orientationScene);
+    plane.position = position;
+    plane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+
+    const texture = new BABYLON.DynamicTexture(`${text}Texture`, { width: 96, height: 96 }, orientationScene, true);
+    texture.hasAlpha = true;
+    texture.drawText(text, 34, 60, "bold 44px Arial", color, "transparent", true);
+
+    const material = new BABYLON.StandardMaterial(`${text}LabelMaterial`, orientationScene);
+    material.diffuseTexture = texture;
+    material.diffuseTexture.hasAlpha = true;
+    material.useAlphaFromDiffuseTexture = true;
+    material.emissiveColor = BABYLON.Color3.White();
+    material.disableLighting = true;
+    material.backFaceCulling = false;
+    plane.material = material;
+}
+
+function initializeOrientationWidget() {
+    if (!orientationCanvas) {
+        return;
+    }
+
+    orientationEngine = new BABYLON.Engine(orientationCanvas, true, { preserveDrawingBuffer: true, stencil: true }, true);
+    orientationScene = new BABYLON.Scene(orientationEngine);
+    orientationScene.clearColor = new BABYLON.Color4(0, 0, 0, 0);
+    orientationEngine.resize();
+
+    orientationCamera = new BABYLON.ArcRotateCamera("orientationCamera", camera.alpha, camera.beta, 6, BABYLON.Vector3.Zero(), orientationScene);
+    orientationCamera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+    orientationCamera.orthoLeft = -3.4;
+    orientationCamera.orthoRight = 3.4;
+    orientationCamera.orthoTop = 3.4;
+    orientationCamera.orthoBottom = -3.4;
+    orientationCamera.inputs.clear();
+
+    const widgetLight = new BABYLON.HemisphericLight("orientationLight", new BABYLON.Vector3(0.2, 1, -0.4), orientationScene);
+    widgetLight.intensity = 1.1;
+
+    const sphereMaterial = new BABYLON.StandardMaterial("orientationSphereMaterial", orientationScene);
+    sphereMaterial.diffuseColor = new BABYLON.Color3(0.82, 0.9, 1);
+    sphereMaterial.emissiveColor = new BABYLON.Color3(0.08, 0.12, 0.18);
+    sphereMaterial.specularColor = new BABYLON.Color3(0.55, 0.65, 0.75);
+
+    orientationSphere = BABYLON.MeshBuilder.CreateSphere("orientationSphere", { diameter: 1.18, segments: 24 }, orientationScene);
+    orientationSphere.material = sphereMaterial;
+
+    createAxisLine("orientationAxisX", new BABYLON.Vector3(2.55, 0, 0), new BABYLON.Color3(1, 0.18, 0.16));
+    createAxisLine("orientationAxisY", new BABYLON.Vector3(0, 2.55, 0), new BABYLON.Color3(0.18, 1, 0.38));
+    createAxisLine("orientationAxisZ", new BABYLON.Vector3(0, 0, 2.55), new BABYLON.Color3(0.22, 0.55, 1));
+
+    createAxisLabel("X", new BABYLON.Vector3(3, 0, 0), "#ff4d4d");
+    createAxisLabel("Y", new BABYLON.Vector3(0, 3, 0), "#4dff88");
+    createAxisLabel("Z", new BABYLON.Vector3(0, 0, 3), "#4da3ff");
+}
+
+function renderOrientationWidget() {
+    if (!orientationScene || !orientationCamera) {
+        return;
+    }
+
+    orientationCamera.alpha = camera.alpha;
+    orientationCamera.beta = camera.beta;
+    if (orientationSphere) {
+        orientationSphere.rotation.y += 0.012;
+    }
+    orientationScene.render();
+}
 
 // Variables for labeling
 let mode = 'transform';
 let labeledNodesList = {}; // Object to store labeled nodes
 let labels = {};
 let nodeMeshes = [];
+let edgeMeshes = [];
+let edgeDefinitions = [];
+let edgeRadius = 0.8;
 let selectedNode = null; // Variable to store the currently selected node
 
 // Custom modal elements
 const customModal = document.getElementById('customModal');
 const dropdownMenu = document.getElementById('nodeLabel');
+const labelListContainer = document.getElementById('labelListContainer');
+const labelPanelToggle = document.getElementById('labelPanelToggle');
 customModal.style.display = 'none'; // Initially hidden
 
 // Babylon.js GUI for Labels
@@ -60,16 +218,106 @@ function createLabel(node, text) {
     return { labelPlane, labelContainer };
 }
 
+function createEdgeMaterial(name, color) {
+    const material = new BABYLON.StandardMaterial(name, scene);
+    material.diffuseColor = color;
+    material.emissiveColor = color.scale(0.35);
+    material.specularColor = new BABYLON.Color3(0.08, 0.08, 0.08);
+    return material;
+}
+
+function getEdgeColor(edgeMesh) {
+    if (edgeMesh.material && edgeMesh.material.diffuseColor) {
+        return edgeMesh.material.diffuseColor.clone();
+    }
+    return edgeMesh.color ? edgeMesh.color.clone() : new BABYLON.Color3(0, 1, 0);
+}
+
+function setEdgeColor(edgeMesh, color) {
+    if (!edgeMesh.material) {
+        edgeMesh.material = createEdgeMaterial(`edgeMaterial-${edgeMesh.name}`, color);
+    }
+    if (edgeMesh.material.diffuseColor) {
+        edgeMesh.material.diffuseColor = color;
+        edgeMesh.material.emissiveColor = color.scale(0.35);
+    }
+    if (edgeMesh.color) {
+        edgeMesh.color = color;
+    }
+}
+
+function createEdgeMesh(edgeData, color = new BABYLON.Color3(0, 1, 0)) {
+    let fromNode = nodeMeshes[edgeData.from];
+    let toNode = nodeMeshes[edgeData.to];
+    if (!fromNode || !toNode) {
+        return null;
+    }
+
+    let edge = BABYLON.MeshBuilder.CreateTube(`line${edgeData.from}-${edgeData.to}`, {
+        path: [fromNode.position, toNode.position],
+        radius: edgeRadius,
+        tessellation: 8,
+        cap: BABYLON.Mesh.CAP_ALL,
+        updatable: false
+    }, scene);
+
+    edge.material = createEdgeMaterial(`edgeMaterial-${edgeData.from}-${edgeData.to}`, color);
+    return edge;
+}
+
+function updateEdgeSizes(newRadius) {
+    edgeRadius = newRadius;
+    const edgeColors = {};
+    edgeMeshes.forEach(edge => {
+        edgeColors[edge.name] = getEdgeColor(edge);
+        edge.dispose();
+    });
+    edgeMeshes = [];
+    edgeDefinitions.forEach(edgeData => {
+        const edgeName = `line${edgeData.from}-${edgeData.to}`;
+        const edge = createEdgeMesh(edgeData, edgeColors[edgeName] || new BABYLON.Color3(0, 1, 0));
+        if (edge) {
+            edgeMeshes.push(edge);
+        }
+    });
+}
+
+function updateNodeSizes(newDiameter) {
+    nodeMeshes.forEach(node => {
+        node.scaling = new BABYLON.Vector3(newDiameter / 6, newDiameter / 6, newDiameter / 6);
+    });
+}
+
 function updateLabelList(nodeId, labelText) {
     let listItem = document.createElement('li');
     listItem.innerText = `Node ${nodeId}: ${labelText}`;
     document.getElementById('labelList').appendChild(listItem);
 }
 
+function clearGraphScene() {
+    resetLabels();
+    nodeMeshes.forEach(node => node.dispose());
+    edgeMeshes.forEach(edge => edge.dispose());
+    nodeMeshes = [];
+    edgeMeshes = [];
+    edgeDefinitions = [];
+    savedEdges = [];
+    selectedNode = null;
+    selectedEdge = null;
+    previouslySelectedNode = null;
+
+    if (guideMesh) {
+        guideMesh.dispose();
+        guideMesh = null;
+    }
+}
+
 // Function to create the graph
 function createGraph(data) {
-    // Clear existing nodes and edges
+    clearGraphScene();
     nodeMeshes = [];
+    edgeMeshes = [];
+    edgeDefinitions = data.edges.slice();
     
     // Create Nodes
     data.nodes.forEach(nodeData => {
@@ -77,22 +325,18 @@ function createGraph(data) {
         node.position = new BABYLON.Vector3(nodeData.x, nodeData.y, nodeData.z);
         nodeMeshes.push(node);
     });
+    updateNodeSizes(parseFloat(document.getElementById('nodeSizeSlider').value));
 
 
-    // Create Edges (Lines)
-    data.edges.forEach(edgeData => {
-    let fromNode = nodeMeshes[edgeData.from];
-    let toNode = nodeMeshes[edgeData.to];
-
-    // Create a line between nodes
-    let line = BABYLON.MeshBuilder.CreateLines(`line${edgeData.from}-${edgeData.to}`, {
-        points: [fromNode.position, toNode.position],
-        updatable: false
-    }, scene);
-
-    // Set the line color directly using the .color property
-    line.color = new BABYLON.Color3(0, 1, 0);  // Set the line color (green in this case)
+    // Create Edges
+    edgeDefinitions.forEach(edgeData => {
+    let edge = createEdgeMesh(edgeData);
+    if (edge) {
+        edgeMeshes.push(edge);
+    }
 });
+
+    updateHomeCameraFromNodes();
 }
 
 
@@ -176,7 +420,9 @@ function loadLabelsFromJSON(data) {
     if (data.savedEdges && Array.isArray(data.savedEdges)) {
         data.savedEdges.forEach(edge => {
             if (edge.length === 2) {
-                savedEdges.push(edge);
+                if (findSavedEdgeIndex(edge) === -1) {
+                    savedEdges.push(edge);
+                }
                 console.log(`Saved edge between nodes: ${edge}`);
 
                 // Construct the edge name (assuming the format 'line{from}-{to}')
@@ -187,7 +433,7 @@ function loadLabelsFromJSON(data) {
 
                 if (edgeMesh) {
                     // Change the color of the edge to black
-                    edgeMesh.color = new BABYLON.Color3(0, 0, 0); // Black color
+                    setEdgeColor(edgeMesh, new BABYLON.Color3(0, 0, 0)); // Black color
                     console.log(`Edge ${edgeName} color changed to black.`);
                 } else {
                     console.error(`Edge ${edgeName} not found in scene.`);
@@ -263,14 +509,33 @@ document.getElementById('resetButton').addEventListener('click', () => {
     resetLabels();  // Reset all labels when the button is clicked
 });
 
+document.getElementById('homeButton').addEventListener('click', () => {
+    applyHomeCameraView();
+});
+
+referenceToggleButton.addEventListener('click', () => {
+    const isCollapsed = movementReference.classList.toggle('collapsed');
+    referenceToggleButton.title = isCollapsed ? "Show 3D reference" : "Hide 3D reference";
+    referenceToggleButton.setAttribute('aria-label', referenceToggleButton.title);
+    referenceToggleButton.setAttribute('aria-expanded', String(!isCollapsed));
+});
+
+labelPanelToggle.addEventListener('click', () => {
+    const isCollapsed = labelListContainer.classList.toggle('collapsed');
+    labelPanelToggle.title = isCollapsed ? "Show node labels" : "Hide node labels";
+    labelPanelToggle.setAttribute('aria-label', labelPanelToggle.title);
+    labelPanelToggle.setAttribute('aria-expanded', String(!isCollapsed));
+});
+
 // Add an event listener to adjust node sizes via the slider
 const nodeSizeSlider = document.getElementById('nodeSizeSlider');
 nodeSizeSlider.addEventListener('input', (event) => {
-    let newDiameter = parseFloat(event.target.value);
+    updateNodeSizes(parseFloat(event.target.value));
+});
 
-    nodeMeshes.forEach(node => {
-        node.scaling = new BABYLON.Vector3(newDiameter / 6, newDiameter / 6, newDiameter / 6);
-    });
+const edgeSizeSlider = document.getElementById('edgeSizeSlider');
+edgeSizeSlider.addEventListener('input', (event) => {
+    updateEdgeSizes(parseFloat(event.target.value));
 });
 
 // Load default graph from graph_data.json
@@ -303,6 +568,8 @@ async function loadDefaultGraph() {
 const uploadModal = document.getElementById('uploadModal');
 const fileInput = document.getElementById('fileInput');
 const cancelButton = document.getElementById('cancelButton');
+const restartButton = document.getElementById('restartButton');
+let uploadModalMode = 'initial';
 
 // Event listener for file input
 fileInput.addEventListener('change', (event) => {
@@ -310,23 +577,37 @@ fileInput.addEventListener('change', (event) => {
     if (file) {
         handleFileUpload(file);
         uploadModal.style.display = 'none';  // Hide the modal after upload
+        uploadModalMode = 'loaded';
+        fileInput.value = '';
     }
 });
 
 // Cancel button event listener: load default graph if the user cancels the upload
 cancelButton.addEventListener('click', () => {
     uploadModal.style.display = 'none';  // Hide the modal
-    loadDefaultGraph();  // Load the default graph from the JSON file
+    if (uploadModalMode === 'initial') {
+        loadDefaultGraph();  // Load the default graph from the JSON file
+        uploadModalMode = 'loaded';
+    }
+});
+
+restartButton.addEventListener('click', () => {
+    uploadModalMode = 'restart';
+    fileInput.value = '';
+    uploadModal.style.display = 'flex';
 });
 
 // Function to initialize the scene
 function initializeScene() {
     // Show the upload modal when the website loads
+    uploadModalMode = 'initial';
     uploadModal.style.display = 'flex';
 }
 
 // Function to display the custom modal with the dropdown
-function showCustomModal() {
+function showCustomModal(currentLabelText = "Undefined") {
+    const matchingOption = Array.from(dropdownMenu.options).find(option => option.text === currentLabelText);
+    dropdownMenu.value = matchingOption ? matchingOption.value : "0";
     customModal.style.display = 'flex'; // Show custom modal
 }
 
@@ -347,7 +628,7 @@ function changeNodeColor(node, color) {
 let previouslySelectedNode = null;
 
 function onSelectNode() {
-    let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    let pickResult = scene.pick(scene.pointerX, scene.pointerY, mesh => nodeMeshes.includes(mesh));
     if (pickResult.hit && nodeMeshes.includes(pickResult.pickedMesh)) {
         selectedNode = pickResult.pickedMesh;  // Store the newly selected node
 
@@ -372,15 +653,7 @@ function onSelectNode() {
             // Ask the user if they want to relabel the node, including the node ID in the message
             let confirmRelabel = confirm(`Node ID# ${selectedNode.id} is already labeled. Do you want to relabel it?`);
             if (confirmRelabel) {
-                // Remove the previous label before relabeling
-                labels[selectedNode.id].labelPlane.dispose();
-                labels[selectedNode.id].labelContainer.dispose();
-                delete labels[selectedNode.id];  // Remove the label from the labels dictionary
-                
-                // Also remove the previous label from the UI list
-                removeLabelFromUI(selectedNode.id);
-                
-                showCustomModal();  // Show custom modal to relabel
+                showCustomModal(labeledNodesList[selectedNode.id]);  // Show custom modal to relabel
             }
         } else {
             showCustomModal();  // Show custom modal with dropdown if not labeled yet
@@ -400,40 +673,37 @@ function removeLabelFromUI(nodeId) {
     }
 }
 
+function removeNodeLabel(nodeId, restoreAvailability = true) {
+    if (labels[nodeId]) {
+        labels[nodeId].labelPlane.dispose();
+        labels[nodeId].labelContainer.dispose();
+        delete labels[nodeId];
+    }
+
+    if (labeledNodesList[nodeId]) {
+        const previousLabelText = labeledNodesList[nodeId];
+        if (restoreAvailability && !availableLabels.includes(previousLabelText)) {
+            availableLabels.push(previousLabelText);
+        }
+        usedLabels.delete(previousLabelText);
+        delete labeledNodesList[nodeId];
+    }
+
+    removeLabelFromUI(nodeId);
+}
+
 
 document.getElementById('setLabelButton').addEventListener('click', () => {
     if (selectedNode) {
-        let labelValue = document.getElementById('nodeLabel').value;
         let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
 
         // If the label is "Undefined"
         if (labelText === "Undefined") {
-            // Remove the label if it exists
-            if (labels[selectedNode.id]) {
-                labels[selectedNode.id].labelPlane.dispose();
-                labels[selectedNode.id].labelContainer.dispose();
-                delete labels[selectedNode.id]; // Remove from the labels dictionary
-            }
-
-            // Remove from the labeled]NodesList if it exists
-            if (labeledNodesList[selectedNode.id]) {
-                // Add the previous label back to availableLabels
-                const previousLabelText = labeledNodesList[selectedNode.id];
-                usedLabels.delete(previousLabelText);  // Remove from used labels
-                availableLabels.push(previousLabelText); // Add back to available labels
-
-                delete labeledNodesList[selectedNode.id]; // Remove from labeled nodes list
-                removeLabelFromUI(selectedNode.id); // Remove from UI list
-            }
+            removeNodeLabel(selectedNode.id);
         } else {
             // Check if the node already had a label
             if (labeledNodesList[selectedNode.id]) {
-                const previousLabelText = labeledNodesList[selectedNode.id];
-                // Remove the previous label before setting the new one
-                labels[selectedNode.id].labelPlane.dispose();
-                labels[selectedNode.id].labelContainer.dispose();
-                usedLabels.delete(previousLabelText); // Remove from used labels
-                availableLabels.push(previousLabelText); // Add back the previous label
+                removeNodeLabel(selectedNode.id);
             }
 
             // Create and store the new label
@@ -539,33 +809,65 @@ function toggleLabelVisibility() {
 let selectedEdge = null;  // Variable to store the selected edge
 let savedEdges = [];  // Array to store the node pairs of confirmed edges
 
+function getNodePairFromEdge(edgeMesh) {
+    return edgeMesh.name.replace("line", "").split("-").map(Number);
+}
+
+function edgePairsMatch(firstPair, secondPair) {
+    return firstPair.length === 2 &&
+        secondPair.length === 2 &&
+        firstPair[0] === secondPair[0] &&
+        firstPair[1] === secondPair[1];
+}
+
+function findSavedEdgeIndex(nodePair) {
+    return savedEdges.findIndex(savedEdge => edgePairsMatch(savedEdge, nodePair));
+}
+
+function isDeletedEdgeColor(edgeMesh) {
+    const edgeColor = getEdgeColor(edgeMesh);
+    return edgeColor.r < 0.08 && edgeColor.g < 0.08 && edgeColor.b < 0.08;
+}
+
 function onSelectEdge() {
-    let pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    let pickResult = scene.pick(scene.pointerX, scene.pointerY, mesh => mesh.name.startsWith("line"));
     if (pickResult.hit && pickResult.pickedMesh && pickResult.pickedMesh.name.startsWith("line")) {
         selectedEdge = pickResult.pickedMesh;
+        let nodePair = getNodePairFromEdge(selectedEdge);
+        let savedEdgeIndex = findSavedEdgeIndex(nodePair);
+
+        if (savedEdgeIndex !== -1 || isDeletedEdgeColor(selectedEdge)) {
+            let confirmUndelete = confirm("This edge is marked as deleted. Do you want to undelete it?");
+            if (confirmUndelete) {
+                if (savedEdgeIndex !== -1) {
+                    savedEdges.splice(savedEdgeIndex, 1);
+                }
+                setEdgeColor(selectedEdge, new BABYLON.Color3(0, 1, 0));  // Green color
+                console.log("Undeleted edge between nodes:", nodePair);
+            }
+            return;
+        }
 
         // Save the original color of the edge (assuming green)
-        let originalColor = selectedEdge.color.clone();
+        let originalColor = getEdgeColor(selectedEdge);
 
         // Change the edge color to red to indicate selection
-        selectedEdge.color = new BABYLON.Color3(1, 0, 0);  // Red color
+        setEdgeColor(selectedEdge, new BABYLON.Color3(1, 0, 0));  // Red color
 
         // Confirm deletion dialog
         let confirmDelete = confirm("Are you sure to delete this edge? Press T to view guide before deleting.");
         if (confirmDelete) {
             // Change the edge color to black if confirmed
-            selectedEdge.color = new BABYLON.Color3(0, 0, 0);  // Black color
-
-            // Assuming edge name is formatted as 'line{from}-{to}', extract node pairs
-            let edgeName = selectedEdge.name;
-            let nodePair = edgeName.replace("line", "").split("-").map(Number);
+            setEdgeColor(selectedEdge, new BABYLON.Color3(0, 0, 0));  // Black color
 
             // Save the node pairs
-            savedEdges.push(nodePair);  // Store the node pair [fromNode, toNode]
+            if (findSavedEdgeIndex(nodePair) === -1) {
+                savedEdges.push(nodePair);  // Store the node pair [fromNode, toNode]
+            }
             console.log("Saved edge between nodes:", nodePair);
         } else {
             // Restore the original color (green) if not confirmed
-            selectedEdge.color = originalColor;
+            setEdgeColor(selectedEdge, originalColor);
         }
     }
 }
@@ -603,17 +905,24 @@ document.getElementById('edgeModeButton').addEventListener('click', () => {
 
 let subjectName = "";  // Variable to store the subject name
 
+function getSubjectNameFromFileName(fileName) {
+    const graphGuideSuffix = "_graph+guide_data.json";
+    if (fileName.endsWith(graphGuideSuffix)) {
+        return fileName.slice(0, -graphGuideSuffix.length);
+    }
+    return fileName.replace(/\.json$/i, "");
+}
+
 function handleFileUpload(file) {
     const reader = new FileReader();
     reader.onload = (event) => {
         try {
             const data = JSON.parse(event.target.result);
 
-            // Extract the first six characters of the filename as the subject name
-            subjectName = file.name.substring(0, 7);  // Get first 7 characters of the filename
+            subjectName = getSubjectNameFromFileName(file.name);
 
             // Update the <h3> tag inside #labelListContainer with the subject name
-            document.getElementById('subjectNameHeader').innerText = `${subjectName} Nodes`;
+            document.getElementById('subjectNameHeader').innerText = subjectName;
 
             // Proceed with creating the graph
             createGraph(data);
@@ -722,6 +1031,7 @@ function createGuide(meshData) {
 
     // Apply vertex data to the mesh
     vertexData.applyToMesh(guideMesh);
+    guideMesh.isPickable = false;
 
     // Set material with transparency
     const material = new BABYLON.StandardMaterial("material", scene);
@@ -776,19 +1086,25 @@ function toggleGuideVisibility() {
 // Resize event handler to keep canvas responsive
 window.addEventListener('resize', () => {
     engine.resize();
+    if (orientationEngine) {
+        orientationEngine.resize();
+    }
 });
 
 // Initialize the scene and show the upload modal
 initializeScene();
+initializeOrientationWidget();
 engine.runRenderLoop(() => {
+    updateScreenFixedLighting();
     scene.render();
+    renderOrientationWidget();
 });
 
 // Create a div for displaying shortcut instructions
 const shortcutWindow = document.createElement('div');
 shortcutWindow.style.position = 'fixed';
 shortcutWindow.style.bottom = '20px';
-shortcutWindow.style.left = '10px';
+shortcutWindow.style.left = '260px';
 shortcutWindow.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
 shortcutWindow.style.color = 'black';
 shortcutWindow.style.padding = '10px';
@@ -798,8 +1114,9 @@ shortcutWindow.style.display = 'none';  // Initially hidden
 shortcutWindow.innerHTML = `
     <h2>Keyboard Shortcuts</h2>
     <ul>
-        <li><strong>R</strong>: Reset labels</li>
+        <li><strong>R</strong>: Clear labels</li>
         <li><strong>Ctrl + S</strong>: Save labels</li>
+        <li><strong>Home</strong>: Return to default camera view</li>
         <li><strong>=</strong>: Increase node size</li>
         <li><strong>-</strong>: Decrease node size</li>
         <li><strong>H</strong>: Toggle label visibility</li>
@@ -826,6 +1143,9 @@ window.addEventListener('keydown', (event) => {
         // Save labels with Ctrl+S
         event.preventDefault();  // Prevent browser's default save action
         document.getElementById('saveButton').click();
+    } else if (event.key === 'Home') {
+        event.preventDefault();
+        document.getElementById('homeButton').click();
     } else if (event.key === '=') {
         // Increase node size via slider
         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
@@ -905,8 +1225,3 @@ window.addEventListener('keyup', (event) => {
 //         toggleGuideVisibility();
 //     }
 // });
-
-
-
-
-

@@ -17,17 +17,176 @@
             right: 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px; /* Space between buttons */
+            gap: 10px;
+            width: 188px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 6px;
+            z-index: 1000;
         }
-        .reset-button, .save-button {
-            padding: 10px 15px;
-            font-size: 16px;
-            background-color: #333;
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .control-group + .control-group {
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+        }
+        .toolbar-button {
+            width: 100%;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 10px;
+            font-size: 14px;
+            font-weight: 700;
+            background-color: #2f2f2f;
             color: white;
             cursor: pointer;
             border: none;
+            border-radius: 4px;
+        }
+        .toolbar-button:hover {
+            background-color: #424242;
+        }
+        .toolbar-button.primary {
+            background-color: #176b7d;
+        }
+        .toolbar-button.primary:hover {
+            background-color: #1d8298;
+        }
+        .toolbar-button.danger {
+            background-color: #4a2f2f;
+        }
+        .toolbar-button.danger:hover {
+            background-color: #633a3a;
+        }
+        .toolbar-button svg {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+        }
+        .display-controls {
+            gap: 9px;
+        }
+        .slider-row {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            align-items: center;
+            gap: 8px;
+            color: #f8fafc;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .slider-row input {
+            width: 100%;
+            min-width: 0;
+        }
+        .movement-reference {
+            position: fixed;
+            left: 10px;
+            bottom: 20px;
+            width: 156px;
+            padding: 0;
+            color: #f8fafc;
+            background-color: rgba(0, 0, 0, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.35;
+            z-index: 1000;
+        }
+        .movement-reference.collapsed {
+            width: 32px;
+            height: 32px;
+            overflow: hidden;
+        }
+        .home-icon-button {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #f8fafc;
+            background-color: rgba(23, 95, 111, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 5px;
-            width: 150px;
+            cursor: pointer;
+            padding: 0;
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            z-index: 2;
+        }
+        .home-icon-button:hover {
+            background-color: #1d7f94;
+        }
+        .home-icon-button svg {
+            width: 17px;
+            height: 17px;
+            display: block;
+        }
+        .reference-toggle-button {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #f8fafc;
+            background-color: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            z-index: 2;
+        }
+        .reference-toggle-button:hover {
+            background-color: rgba(255, 255, 255, 0.22);
+        }
+        .reference-toggle-button svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        .reference-toggle-button .toggle-3d-icon {
+            display: none;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 1;
+        }
+        .movement-reference.collapsed .home-icon-button,
+        .movement-reference.collapsed #orientationCanvas {
+            display: none;
+        }
+        .movement-reference.collapsed .reference-toggle-button {
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(23, 95, 111, 0.95);
+        }
+        .movement-reference.collapsed .reference-toggle-button svg {
+            display: none;
+        }
+        .movement-reference.collapsed .reference-toggle-button .toggle-3d-icon {
+            display: inline;
+        }
+        #orientationCanvas {
+            width: 156px;
+            height: 156px;
+            display: block;
+            border-radius: 4px;
+            background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02) 62%);
         }
         .toggle-button-group {
             position: fixed;  /* Fixes the position relative to the viewport */
@@ -64,14 +223,72 @@
             top: 10px;
             left: 10px;
             background-color: rgba(255, 255, 255, 0.8);
-            padding: 10px;
+            padding: 10px 12px;
             border-radius: 5px;
-            max-width: 200px;
+            width: 214px;
+            max-height: 360px;
             overflow-y: auto;
+            transition: width 0.2s ease, max-height 0.2s ease;
+        }
+        #labelListContainer.collapsed {
+            width: auto;
+            max-width: 260px;
+            max-height: 48px;
+            overflow: hidden;
+        }
+        .label-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #subjectNameHeader {
+            margin: 0;
+            flex: 1;
+            min-width: 0;
+            font-size: 18px;
+            white-space: nowrap;
+        }
+        .label-panel-toggle {
+            width: 26px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+        .label-panel-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+        .label-panel-toggle svg {
+            width: 14px;
+            height: 14px;
+        }
+        .label-panel-toggle .node-icon {
+            display: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #ffffff 0, #dfe8f4 32%, #9da8b5 68%, #4f5966 100%);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.32), 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+        #labelListContainer.collapsed .label-panel-toggle svg {
+            display: none;
+        }
+        #labelListContainer.collapsed .label-panel-toggle .node-icon {
+            display: block;
+        }
+        #labelListContainer.collapsed #labelList {
+            display: none;
         }
         #labelList {
             list-style-type: none;
             padding: 0;
+            margin: 10px 0 0 0;
         }
         /* Modal styling */
         .modal {
@@ -121,7 +338,7 @@
     
     <div id="uploadModal" class="modal">
         <div class="modal-content">
-            <h3>Upload a JSON file to load the graph</h3>
+            <h3>Please upload ArteryX Graph+Guide JSON</h3>
             <input type="file" id="fileInput" accept=".json">
             <br>
             <button id="cancelButton">Cancel</button>
@@ -134,14 +351,32 @@
         <button class="mode-button" id="edgeModeButton">Edge</button>
     </div>
     <div class="button-container">
-        <!-- <button class="mode-button" id="modeButton">Switch to Selection Mode</button> -->
-        
-        
-        <button class="reset-button" id="resetButton">Reset</button>
-        <button class="save-button" id="saveButton">Save Labels</button>
-        <button class="load-button" id="loadButton">Load Labels</button> <!-- New button to load labels -->
+        <div class="control-group">
+            <button class="toolbar-button primary" id="restartButton" title="Upload a new ArteryX Graph+Guide JSON">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    <path d="m7 8 5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M5 15v4h14v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                New Graph
+            </button>
+        </div>
+        <div class="control-group">
+            <button class="toolbar-button" id="saveButton">Save Labels</button>
+            <button class="toolbar-button" id="loadButton">Load Labels</button>
+            <button class="toolbar-button danger" id="resetButton" title="Clear all current node labels">Clear Labels</button>
+        </div>
+        <div class="control-group display-controls">
+            <label class="slider-row" for="nodeSizeSlider">
+                <span>Nodes</span>
+                <input type="range" id="nodeSizeSlider" min="1" max="6" value="6" title="Node size" aria-label="Node size">
+            </label>
+            <label class="slider-row" for="edgeSizeSlider">
+                <span>Edges</span>
+                <input type="range" id="edgeSizeSlider" min="0.2" max="3" step="0.1" value="0.8" title="Edge size" aria-label="Edge size">
+            </label>
+        </div>
         <input type="file" id="labelFileInput" accept=".json" style="display: none;"> <!-- Hidden file input -->
-        <input type="range" id="nodeSizeSlider" min="1" max="6" value="6">
     
     </div>
     
@@ -167,8 +402,33 @@
 
  
     <div id="labelListContainer">
-        <h3 id="subjectNameHeader">Nodes</h3>
+        <div class="label-panel-header">
+            <h3 id="subjectNameHeader">Subject</h3>
+            <button class="label-panel-toggle" id="labelPanelToggle" title="Hide node labels" aria-label="Hide node labels" aria-expanded="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+                </svg>
+                <span class="node-icon" aria-hidden="true"></span>
+            </button>
+        </div>
         <ul id="labelList"></ul>
+    </div>
+
+    <div class="movement-reference" id="movementReference" aria-label="3D movement reference">
+        <button class="home-icon-button" id="homeButton" title="Return camera to default view" aria-label="Return camera to default view">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 10.5 12 3l9 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M5.5 9.5V21h13V9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M9.5 21v-6h5v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+        </button>
+        <button class="reference-toggle-button" id="referenceToggleButton" title="Hide 3D reference" aria-label="Hide 3D reference" aria-expanded="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+            </svg>
+            <span class="toggle-3d-icon" aria-hidden="true">3D</span>
+        </button>
+        <canvas id="orientationCanvas" aria-label="Live 3D orientation sphere"></canvas>
     </div>
     
 
@@ -218,5 +478,3 @@
 
 </body>
 </html>
-
-
