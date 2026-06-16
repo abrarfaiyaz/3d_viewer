@@ -17,14 +17,30 @@ camera.attachControl(canvas, true);
 camera.wheelPrecision = 35;
 camera.panningSensibility = 70;
 
-let homeCameraView = {
-    alpha: Math.PI / 2,
-    beta: Math.PI / 3,
-    radius: 260,
-    target: new BABYLON.Vector3(0, 0, 0)
+let activeHomeView = 'z';
+let displayedAnatomyHomeView = null;
+let homeCameraViews = {
+    z: {
+        alpha: Math.PI / 2,
+        beta: Math.PI / 3,
+        radius: 260,
+        target: new BABYLON.Vector3(0, 0, 0)
+    },
+    x: {
+        alpha: 0,
+        beta: Math.PI / 3,
+        radius: 260,
+        target: new BABYLON.Vector3(0, 0, 0)
+    }
 };
 
-function applyHomeCameraView(useAnimation = true) {
+function getHomeCameraView(viewKey = activeHomeView) {
+    return homeCameraViews[viewKey] || homeCameraViews.z;
+}
+
+function applyHomeCameraView(viewKey = activeHomeView, useAnimation = true) {
+    activeHomeView = viewKey;
+    const homeCameraView = getHomeCameraView(viewKey);
     if (useAnimation) {
         BABYLON.Animation.CreateAndStartAnimation("cameraHomeAlpha", camera, "alpha", 60, 20, camera.alpha, homeCameraView.alpha, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
         BABYLON.Animation.CreateAndStartAnimation("cameraHomeBeta", camera, "beta", 60, 20, camera.beta, homeCameraView.beta, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
@@ -55,18 +71,27 @@ function updateHomeCameraFromNodes() {
     const bounds = max.subtract(min);
     const largestDimension = Math.max(bounds.x, bounds.y, bounds.z);
 
-    homeCameraView = {
-        alpha: Math.PI / 2,
-        beta: Math.PI / 3,
-        radius: Math.max(largestDimension * 1.6, 80),
-        target: center
+    const homeRadius = Math.max(largestDimension * 1.6, 80);
+    homeCameraViews = {
+        z: {
+            alpha: Math.PI / 2,
+            beta: Math.PI / 3,
+            radius: homeRadius,
+            target: center
+        },
+        x: {
+            alpha: 0,
+            beta: Math.PI / 3,
+            radius: homeRadius,
+            target: center
+        }
     };
 
     camera.lowerRadiusLimit = Math.max(largestDimension * 0.08, 8);
-    camera.upperRadiusLimit = Math.max(largestDimension * 5, homeCameraView.radius * 2);
+    camera.upperRadiusLimit = Math.max(largestDimension * 5, homeRadius * 2);
     camera.minZ = 0.1;
     camera.maxZ = Math.max(largestDimension * 10, 1000);
-    applyHomeCameraView(false);
+    applyHomeCameraView('z', false);
 }
 
 // Screen-relative lighting keeps nodes readable while the user rotates the scene.
@@ -83,6 +108,73 @@ screenTopLight.specular = new BABYLON.Color3(0.22, 0.22, 0.22);
 function updateScreenFixedLighting() {
     light.direction = camera.getDirection(BABYLON.Axis.Y).normalize();
     screenTopLight.direction = camera.getDirection(new BABYLON.Vector3(0, -0.65, 1)).normalize();
+}
+
+function getAngleDifference(firstAngle, secondAngle) {
+    return Math.atan2(Math.sin(firstAngle - secondAngle), Math.cos(firstAngle - secondAngle));
+}
+
+function getMatchingHomeViewKey() {
+    const matchingHomeKey = Object.keys(homeCameraViews).find(viewKey => {
+        const homeCameraView = homeCameraViews[viewKey];
+        const radiusTolerance = Math.max(homeCameraView.radius * 0.015, 1);
+        return Math.abs(getAngleDifference(camera.alpha, homeCameraView.alpha)) < 0.025 &&
+            Math.abs(camera.beta - homeCameraView.beta) < 0.025 &&
+            Math.abs(camera.radius - homeCameraView.radius) < radiusTolerance &&
+            BABYLON.Vector3.Distance(camera.target, homeCameraView.target) < 1;
+    });
+
+    return matchingHomeKey || null;
+}
+
+function isCameraAtHomeView() {
+    return getMatchingHomeViewKey() !== null;
+}
+
+function updateAnatomyDirectionVisibility() {
+    const matchingHomeKey = getMatchingHomeViewKey();
+    if (matchingHomeKey && matchingHomeKey !== displayedAnatomyHomeView) {
+        activeHomeView = matchingHomeKey;
+        updateAllAnatomyDirectionButtons();
+        displayedAnatomyHomeView = matchingHomeKey;
+    } else if (!matchingHomeKey) {
+        displayedAnatomyHomeView = null;
+    }
+    anatomyDirectionOverlay.classList.toggle('visible', matchingHomeKey !== null);
+}
+
+function updateAnatomyDirectionButton(screenSide) {
+    const button = document.querySelector(`.anatomy-direction-button[data-screen-side="${screenSide}"]`);
+    if (!button) {
+        return;
+    }
+
+    const assignedDirection = anatomyDirectionAssignments[activeHomeView][screenSide];
+    const directionConfig = anatomyDirectionOptions[assignedDirection];
+    button.textContent = directionConfig ? directionConfig.marker : "?";
+    button.classList.toggle('unset', !directionConfig);
+    button.title = directionConfig ? directionConfig.description : `Set ${screenSide} screen anatomical direction`;
+    button.setAttribute('aria-label', button.title);
+}
+
+function updateAllAnatomyDirectionButtons() {
+    Object.keys(anatomyDirectionAssignments[activeHomeView]).forEach(updateAnatomyDirectionButton);
+}
+
+function resetAnatomyDirectionAssignments() {
+    anatomyDirectionAssignments = {
+        z: createEmptyAnatomyDirectionSides(),
+        x: createEmptyAnatomyDirectionSides()
+    };
+    displayedAnatomyHomeView = null;
+    updateAllAnatomyDirectionButtons();
+}
+
+function openAnatomyDirectionModal(screenSide) {
+    selectedAnatomyScreenSide = screenSide;
+    anatomyDirectionSelect.value = anatomyDirectionAssignments[activeHomeView][screenSide] || "";
+    anatomyDirectionViewLabel.innerText = activeHomeView === 'x' ? "(X Home)" : "(Z Home)";
+    anatomyDirectionModal.style.display = 'flex';
 }
 
 const orientationCanvas = document.getElementById('orientationCanvas');
@@ -186,7 +278,98 @@ const customModal = document.getElementById('customModal');
 const dropdownMenu = document.getElementById('nodeLabel');
 const labelListContainer = document.getElementById('labelListContainer');
 const labelPanelToggle = document.getElementById('labelPanelToggle');
+const brandLogoButton = document.getElementById('brandLogoButton');
+const anatomyDirectionOverlay = document.getElementById('anatomyDirectionOverlay');
+const anatomyDirectionModal = document.getElementById('anatomyDirectionModal');
+const anatomyDirectionViewLabel = document.getElementById('anatomyDirectionViewLabel');
+const anatomyDirectionSelect = document.getElementById('anatomyDirectionSelect');
+const setAnatomyDirectionButton = document.getElementById('setAnatomyDirectionButton');
+const cancelAnatomyDirectionButton = document.getElementById('cancelAnatomyDirectionButton');
+const anatomyDirectionButtons = document.querySelectorAll('.anatomy-direction-button');
 customModal.style.display = 'none'; // Initially hidden
+anatomyDirectionModal.style.display = 'none';
+
+brandLogoButton.addEventListener('click', () => {
+    window.location.reload();
+});
+
+const anatomyDirectionOptions = {
+    anatomical_left: {
+        marker: "Left",
+        description: "Anatomical Left - patient's left side"
+    },
+    anatomical_right: {
+        marker: "Right",
+        description: "Anatomical Right - patient's right side"
+    },
+    nose_anterior: {
+        marker: "Nose",
+        description: "Anterior / Nose - toward the face or nose"
+    },
+    back_posterior: {
+        marker: "Back",
+        description: "Posterior / Back of Head - toward the back of the head"
+    },
+    top_superior: {
+        marker: "Top",
+        description: "Superior / Top of Brain - toward the crown/top surface"
+    },
+    neck_inferior: {
+        marker: "Neck",
+        description: "Inferior / Neck Surface - toward the neck/base of brain"
+    }
+};
+
+const anatomyHomeViewSideAxes = {
+    z: {
+        top: "y+",
+        right: "x+",
+        bottom: "y-",
+        left: "x-"
+    },
+    x: {
+        top: "y+",
+        right: "z+",
+        bottom: "y-",
+        left: "z-"
+    }
+};
+
+function createEmptyAnatomyDirectionSides() {
+    return {
+        top: "",
+        right: "",
+        bottom: "",
+        left: ""
+    };
+}
+
+let anatomyDirectionAssignments = {
+    z: createEmptyAnatomyDirectionSides(),
+    x: createEmptyAnatomyDirectionSides()
+};
+let selectedAnatomyScreenSide = null;
+
+function syncAnatomyDirectionAcrossHomeViews(sourceViewKey, sourceScreenSide, directionValue) {
+    const sourceAxis = anatomyHomeViewSideAxes[sourceViewKey]?.[sourceScreenSide];
+    if (!sourceAxis) {
+        return;
+    }
+
+    Object.keys(anatomyHomeViewSideAxes).forEach(viewKey => {
+        if (viewKey === sourceViewKey) {
+            return;
+        }
+
+        const matchingScreenSide = Object.keys(anatomyHomeViewSideAxes[viewKey]).find(screenSide => {
+            return anatomyHomeViewSideAxes[viewKey][screenSide] === sourceAxis;
+        });
+
+        if (matchingScreenSide) {
+            anatomyDirectionAssignments[viewKey][matchingScreenSide] = directionValue;
+        }
+    });
+}
 
 // Babylon.js GUI for Labels
 let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -305,6 +488,7 @@ function clearGraphScene() {
     selectedNode = null;
     selectedEdge = null;
     previouslySelectedNode = null;
+    resetAnatomyDirectionAssignments();
 
     if (guideMesh) {
         guideMesh.dispose();
@@ -443,6 +627,27 @@ function loadLabelsFromJSON(data) {
     } else {
         console.log("No saved edges found in JSON.");
     }
+
+    if (data.anatomicalDirections && typeof data.anatomicalDirections === "object") {
+        const hasHomeViewAssignments = data.anatomicalDirections.z || data.anatomicalDirections.x;
+        if (hasHomeViewAssignments) {
+            ['z', 'x'].forEach(viewKey => {
+                const savedViewAssignments = data.anatomicalDirections[viewKey] || {};
+                Object.keys(anatomyDirectionAssignments[viewKey]).forEach(screenSide => {
+                    const directionValue = savedViewAssignments[screenSide];
+                    anatomyDirectionAssignments[viewKey][screenSide] = anatomyDirectionOptions[directionValue] ? directionValue : "";
+                });
+            });
+        } else {
+            Object.keys(anatomyDirectionAssignments.z).forEach(screenSide => {
+                const directionValue = data.anatomicalDirections[screenSide];
+                const safeDirectionValue = anatomyDirectionOptions[directionValue] ? directionValue : "";
+                anatomyDirectionAssignments.z[screenSide] = safeDirectionValue;
+                anatomyDirectionAssignments.x[screenSide] = safeDirectionValue;
+            });
+        }
+        updateAllAnatomyDirectionButtons();
+    }
 }
 
 //test chatgpt function for updating the available list of variables when loading some predone labels
@@ -509,8 +714,12 @@ document.getElementById('resetButton').addEventListener('click', () => {
     resetLabels();  // Reset all labels when the button is clicked
 });
 
-document.getElementById('homeButton').addEventListener('click', () => {
-    applyHomeCameraView();
+document.getElementById('homeZButton').addEventListener('click', () => {
+    applyHomeCameraView('z');
+});
+
+document.getElementById('homeXButton').addEventListener('click', () => {
+    applyHomeCameraView('x');
 });
 
 referenceToggleButton.addEventListener('click', () => {
@@ -525,6 +734,28 @@ labelPanelToggle.addEventListener('click', () => {
     labelPanelToggle.title = isCollapsed ? "Show node labels" : "Hide node labels";
     labelPanelToggle.setAttribute('aria-label', labelPanelToggle.title);
     labelPanelToggle.setAttribute('aria-expanded', String(!isCollapsed));
+});
+
+anatomyDirectionButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        openAnatomyDirectionModal(button.dataset.screenSide);
+    });
+});
+
+setAnatomyDirectionButton.addEventListener('click', () => {
+    if (selectedAnatomyScreenSide) {
+        const selectedDirection = anatomyDirectionSelect.value;
+        anatomyDirectionAssignments[activeHomeView][selectedAnatomyScreenSide] = selectedDirection;
+        syncAnatomyDirectionAcrossHomeViews(activeHomeView, selectedAnatomyScreenSide, selectedDirection);
+        updateAllAnatomyDirectionButtons();
+    }
+    anatomyDirectionModal.style.display = 'none';
+    selectedAnatomyScreenSide = null;
+});
+
+cancelAnatomyDirectionButton.addEventListener('click', () => {
+    anatomyDirectionModal.style.display = 'none';
+    selectedAnatomyScreenSide = null;
 });
 
 // Add an event listener to adjust node sizes via the slider
@@ -953,7 +1184,8 @@ function saveLabelsAsJSON() {
     // Prepare data to save, including both labeled nodes and saved edges
     const dataToSave = {
         labeledNodes: labeledNodes,
-        savedEdges: savedEdges  // Include the saved edges (node pairs)
+        savedEdges: savedEdges,  // Include the saved edges (node pairs)
+        anatomicalDirections: anatomyDirectionAssignments
     };
 
     // Convert to JSON string
@@ -1094,8 +1326,10 @@ window.addEventListener('resize', () => {
 // Initialize the scene and show the upload modal
 initializeScene();
 initializeOrientationWidget();
+updateAllAnatomyDirectionButtons();
 engine.runRenderLoop(() => {
     updateScreenFixedLighting();
+    updateAnatomyDirectionVisibility();
     scene.render();
     renderOrientationWidget();
 });
@@ -1116,7 +1350,7 @@ shortcutWindow.innerHTML = `
     <ul>
         <li><strong>R</strong>: Clear labels</li>
         <li><strong>Ctrl + S</strong>: Save labels</li>
-        <li><strong>Home</strong>: Return to default camera view</li>
+        <li><strong>Home</strong>: Return to Z-facing home view</li>
         <li><strong>=</strong>: Increase node size</li>
         <li><strong>-</strong>: Decrease node size</li>
         <li><strong>H</strong>: Toggle label visibility</li>
@@ -1145,7 +1379,7 @@ window.addEventListener('keydown', (event) => {
         document.getElementById('saveButton').click();
     } else if (event.key === 'Home') {
         event.preventDefault();
-        document.getElementById('homeButton').click();
+        document.getElementById('homeZButton').click();
     } else if (event.key === '=') {
         // Increase node size via slider
         nodeSizeSlider.value = Math.min(parseInt(nodeSizeSlider.value) + 1, 6);  // Increment and cap at 6
