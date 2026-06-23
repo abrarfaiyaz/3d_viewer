@@ -129,6 +129,15 @@
         .toolbar-button:hover {
             background-color: #424242;
         }
+        .toolbar-button.active-helper,
+        .toolbar-button[aria-pressed="true"] {
+            background-color: #0b7c54;
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+        }
+        .toolbar-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
         .toolbar-button.primary {
             background-color: #176b7d;
         }
@@ -393,10 +402,75 @@
             padding: 20px;
             border-radius: 10px;
             text-align: center;
+            min-width: 320px;
         }
         .modal-content select {
             margin-top: 10px;
-            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            padding: 10px 12px;
+            border: 1px solid rgba(23, 107, 125, 0.55);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.92);
+            color: #10202a;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .landmark-probability-list {
+            display: none;
+            width: min(360px, 72vw);
+            max-height: 260px;
+            overflow-y: auto;
+            margin: 12px auto 0;
+            padding: 8px;
+            border: 1px solid rgba(23, 107, 125, 0.28);
+            border-radius: 10px;
+            background: rgba(8, 16, 22, 0.74);
+            box-shadow: inset 0 1px 14px rgba(0, 0, 0, 0.22);
+        }
+        .landmark-probability-list.visible {
+            display: grid;
+            gap: 7px;
+        }
+        .modal-content .landmark-probability-option {
+            display: grid;
+            grid-template-columns: 58px 1fr;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            margin: 0;
+            margin-top: 0;
+            padding: 8px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #f7fafc;
+            cursor: pointer;
+            text-align: left;
+        }
+        .modal-content .landmark-probability-option:hover,
+        .modal-content .landmark-probability-option.selected {
+            border-color: rgba(72, 187, 120, 0.72);
+            background: rgba(16, 92, 68, 0.74);
+        }
+        .landmark-probability-percent {
+            padding: 4px 7px;
+            border-radius: 999px;
+            background: #ddfce8;
+            color: #075c3a;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            text-align: center;
+        }
+        .landmark-probability-name {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .modal-content button {
             margin-top: 15px;
@@ -459,6 +533,7 @@
         <div class="control-group">
             <button class="toolbar-button" id="saveButton">Save Labels</button>
             <button class="toolbar-button" id="loadButton">Load Labels</button>
+            <button class="toolbar-button" id="helpLandmarkButton" aria-pressed="false" disabled>Help Landmark</button>
             <button class="toolbar-button danger" id="resetButton" title="Clear all current node labels">Clear Labels</button>
         </div>
         <div class="control-group display-controls">
@@ -565,6 +640,7 @@
                 <option value="21">Pcomm-ICA_L</option>
                 <option value="22">Pcomm-ICA_R</option>
             </select>
+            <div id="landmarkProbabilityList" class="landmark-probability-list" aria-label="Landmark probability suggestions"></div>
             <br>
             <button id="setLabelButton">Set Label</button>
         </div>

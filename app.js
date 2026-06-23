@@ -159,6 +159,7 @@ function updateAnatomyDirectionButton(screenSide) {
 
 function updateAllAnatomyDirectionButtons() {
     Object.keys(anatomyDirectionAssignments[activeHomeView]).forEach(updateAnatomyDirectionButton);
+    setLandmarkHelperButtonState();
 }
 
 function resetAnatomyDirectionAssignments() {
@@ -272,12 +273,16 @@ let edgeMeshes = [];
 let edgeDefinitions = [];
 let edgeRadius = 0.8;
 let selectedNode = null; // Variable to store the currently selected node
+let landmarkHelpActive = false;
+let landmarkProbabilitiesByNode = {};
 
 // Custom modal elements
 const customModal = document.getElementById('customModal');
 const dropdownMenu = document.getElementById('nodeLabel');
+const landmarkProbabilityList = document.getElementById('landmarkProbabilityList');
 const labelListContainer = document.getElementById('labelListContainer');
 const labelPanelToggle = document.getElementById('labelPanelToggle');
+const helpLandmarkButton = document.getElementById('helpLandmarkButton');
 const brandLogoButton = document.getElementById('brandLogoButton');
 const anatomyDirectionOverlay = document.getElementById('anatomyDirectionOverlay');
 const anatomyDirectionModal = document.getElementById('anatomyDirectionModal');
@@ -288,6 +293,10 @@ const cancelAnatomyDirectionButton = document.getElementById('cancelAnatomyDirec
 const anatomyDirectionButtons = document.querySelectorAll('.anatomy-direction-button');
 customModal.style.display = 'none'; // Initially hidden
 anatomyDirectionModal.style.display = 'none';
+
+Array.from(dropdownMenu.options).forEach(option => {
+    option.dataset.labelText = option.text;
+});
 
 brandLogoButton.addEventListener('click', () => {
     window.location.reload();
@@ -323,15 +332,15 @@ const anatomyDirectionOptions = {
 const anatomyHomeViewSideAxes = {
     z: {
         top: "y+",
-        right: "x+",
+        right: "x-",
         bottom: "y-",
-        left: "x-"
+        left: "x+"
     },
     x: {
         top: "y+",
-        right: "z+",
+        right: "z-",
         bottom: "y-",
-        left: "z-"
+        left: "z+"
     }
 };
 
@@ -369,6 +378,324 @@ function syncAnatomyDirectionAcrossHomeViews(sourceViewKey, sourceScreenSide, di
             anatomyDirectionAssignments[viewKey][matchingScreenSide] = directionValue;
         }
     });
+}
+
+const landmarkRuleLabels = [
+    "ICA_Root_R",
+    "ICA_Root_L",
+    "VA_Root_R",
+    "VA_Root_L",
+    "M1-M2_R",
+    "M1-M2_L"
+];
+
+const landmarkFallbackLabels = [
+    "Undefined",
+    "Pcomm-ICA_R",
+    "ICA-MCA-ACA_R",
+    "ICA-MCA-ACA_L",
+    "BA-VA",
+    "PCA-BA",
+    "A1-A2_L",
+    "A1-A2_R"
+];
+
+const requiredLandmarkDirectionKeys = [
+    "anatomical_left",
+    "anatomical_right",
+    "nose_anterior",
+    "back_posterior",
+    "top_superior",
+    "neck_inferior"
+];
+
+function getDropdownLabelText(option) {
+    return option.dataset.labelText || option.text.replace(/\s+—\s+\d+%$/, "");
+}
+
+function getDropdownLabelOptions() {
+    return Array.from(dropdownMenu.options).map(option => ({
+        option,
+        labelText: getDropdownLabelText(option)
+    }));
+}
+
+function setLandmarkHelperButtonState() {
+    const landmarkButton = document.getElementById('helpLandmarkButton');
+    if (!landmarkButton) {
+        return;
+    }
+
+    const hasRequiredDirections = hasRequiredLandmarkDirections();
+    const canCalculate = nodeMeshes.length > 0 && !!guideMesh && hasRequiredDirections;
+    landmarkButton.disabled = !canCalculate;
+    landmarkButton.classList.toggle('active-helper', landmarkHelpActive);
+    landmarkButton.setAttribute('aria-pressed', String(landmarkHelpActive));
+    if (landmarkHelpActive) {
+        landmarkButton.title = "Landmark probabilities are available in the label menu";
+    } else if (!hasRequiredDirections) {
+        landmarkButton.title = "Set all six anatomical directions before using landmark help";
+    } else {
+        landmarkButton.title = "Calculate landmark probabilities from anatomy directions and graph structure";
+    }
+}
+
+function resetLandmarkProbabilities() {
+    landmarkHelpActive = false;
+    landmarkProbabilitiesByNode = {};
+    restoreLandmarkDropdown();
+    setLandmarkHelperButtonState();
+}
+
+function getAxisVector(axisKey) {
+    const sign = axisKey.endsWith("+") ? 1 : -1;
+    if (axisKey.startsWith("x")) {
+        return new BABYLON.Vector3(sign, 0, 0);
+    }
+    if (axisKey.startsWith("y")) {
+        return new BABYLON.Vector3(0, sign, 0);
+    }
+    return new BABYLON.Vector3(0, 0, sign);
+}
+
+function getAnatomicalDirectionVectors() {
+    const vectors = {};
+    Object.keys(anatomyHomeViewSideAxes).forEach(viewKey => {
+        Object.keys(anatomyHomeViewSideAxes[viewKey]).forEach(screenSide => {
+            const directionKey = anatomyDirectionAssignments[viewKey][screenSide];
+            if (!directionKey) {
+                return;
+            }
+
+            const axisVector = getAxisVector(anatomyHomeViewSideAxes[viewKey][screenSide]);
+            vectors[directionKey] = vectors[directionKey] ? vectors[directionKey].add(axisVector) : axisVector.clone();
+        });
+    });
+
+    Object.keys(vectors).forEach(directionKey => {
+        if (vectors[directionKey].length() > 0) {
+            vectors[directionKey].normalize();
+        }
+    });
+
+    return vectors;
+}
+
+function hasRequiredLandmarkDirections() {
+    const directionVectors = getAnatomicalDirectionVectors();
+    return requiredLandmarkDirectionKeys.every(directionKey => {
+        return directionVectors[directionKey] && directionVectors[directionKey].length() > 0;
+    });
+}
+
+function getGraphBounds() {
+    let min = nodeMeshes[0].position.clone();
+    let max = nodeMeshes[0].position.clone();
+    nodeMeshes.forEach(node => {
+        min = BABYLON.Vector3.Minimize(min, node.position);
+        max = BABYLON.Vector3.Maximize(max, node.position);
+    });
+
+    const center = min.add(max).scale(0.5);
+    const extent = max.subtract(min);
+    return {
+        center,
+        extent,
+        radius: Math.max(extent.x, extent.y, extent.z) / 2 || 1
+    };
+}
+
+function getDirectionalScore(node, directionKey, directionVectors, graphBounds) {
+    const directionVector = directionVectors[directionKey];
+    if (!directionVector || directionVector.length() === 0) {
+        return 0.5;
+    }
+
+    const relativePosition = node.position.subtract(graphBounds.center);
+    const projectedDistance = BABYLON.Vector3.Dot(relativePosition, directionVector);
+    return Math.max(0, Math.min(1, (projectedDistance / graphBounds.radius + 1) / 2));
+}
+
+function getMiddleBetweenScore(node, firstDirectionKey, secondDirectionKey, directionVectors, graphBounds) {
+    const firstVector = directionVectors[firstDirectionKey];
+    const secondVector = directionVectors[secondDirectionKey];
+    if (!firstVector || !secondVector) {
+        return 0.5;
+    }
+
+    const axisVector = firstVector.subtract(secondVector);
+    if (axisVector.length() === 0) {
+        return 0.5;
+    }
+    axisVector.normalize();
+
+    const relativePosition = node.position.subtract(graphBounds.center);
+    const normalizedProjection = (BABYLON.Vector3.Dot(relativePosition, axisVector) / graphBounds.radius + 1) / 2;
+    return Math.max(0, Math.min(1, 1 - Math.abs(normalizedProjection - 0.5) * 2));
+}
+
+function getNodeDegreeMap() {
+    const degreeMap = {};
+    nodeMeshes.forEach(node => {
+        degreeMap[node.id] = 0;
+    });
+    edgeDefinitions.forEach(edgeData => {
+        const fromId = String(edgeData.from);
+        const toId = String(edgeData.to);
+        if (degreeMap[fromId] !== undefined) {
+            degreeMap[fromId] += 1;
+        }
+        if (degreeMap[toId] !== undefined) {
+            degreeMap[toId] += 1;
+        }
+    });
+    return degreeMap;
+}
+
+function applyExistingLabelPrior(scoreByLabel, nodeId) {
+    Object.keys(labeledNodesList).forEach(labeledNodeId => {
+        const usedLabel = labeledNodesList[labeledNodeId];
+        if (scoreByLabel[usedLabel] === undefined) {
+            return;
+        }
+
+        if (String(labeledNodeId) === String(nodeId)) {
+            scoreByLabel[usedLabel] *= 1.35;
+        } else {
+            scoreByLabel[usedLabel] *= 0.08;
+        }
+    });
+}
+
+function normalizeLandmarkScores(scoreByLabel) {
+    const totalScore = Object.values(scoreByLabel).reduce((sum, score) => sum + score, 0) || 1;
+    const probabilityByLabel = {};
+    Object.keys(scoreByLabel).forEach(labelText => {
+        probabilityByLabel[labelText] = scoreByLabel[labelText] / totalScore;
+    });
+    return probabilityByLabel;
+}
+
+function calculateLandmarkProbabilityForNode(node, degreeMap, directionVectors, graphBounds) {
+    const scoreByLabel = {};
+    getDropdownLabelOptions().forEach(({ labelText }) => {
+        scoreByLabel[labelText] = landmarkFallbackLabels.includes(labelText) ? 1 : 0.12;
+    });
+
+    const degree = degreeMap[node.id] || 0;
+    const isEndNode = degree <= 1;
+    const isMiddleNode = !isEndNode;
+    const neckScore = getDirectionalScore(node, "neck_inferior", directionVectors, graphBounds);
+    const topScore = getDirectionalScore(node, "top_superior", directionVectors, graphBounds);
+    const rightScore = getDirectionalScore(node, "anatomical_right", directionVectors, graphBounds);
+    const leftScore = getDirectionalScore(node, "anatomical_left", directionVectors, graphBounds);
+    const noseScore = getDirectionalScore(node, "nose_anterior", directionVectors, graphBounds);
+    const noseBackMiddleScore = getMiddleBetweenScore(node, "nose_anterior", "back_posterior", directionVectors, graphBounds);
+
+    if (isEndNode) {
+        scoreByLabel["ICA_Root_R"] += 18 * neckScore * rightScore * noseScore;
+        scoreByLabel["ICA_Root_L"] += 18 * neckScore * leftScore * noseScore;
+        scoreByLabel["VA_Root_R"] += 16 * neckScore * rightScore * noseBackMiddleScore;
+        scoreByLabel["VA_Root_L"] += 16 * neckScore * leftScore * noseBackMiddleScore;
+    }
+
+    if (isMiddleNode) {
+        scoreByLabel["M1-M2_R"] += 14 * topScore * rightScore;
+        scoreByLabel["M1-M2_L"] += 14 * topScore * leftScore;
+    }
+
+    landmarkRuleLabels.forEach(labelText => {
+        if (scoreByLabel[labelText] === undefined) {
+            scoreByLabel[labelText] = 0.12;
+        }
+    });
+
+    applyExistingLabelPrior(scoreByLabel, node.id);
+    return normalizeLandmarkScores(scoreByLabel);
+}
+
+function calculateLandmarkProbabilities() {
+    if (!nodeMeshes.length) {
+        return;
+    }
+
+    if (!hasRequiredLandmarkDirections()) {
+        alert("Please set all six anatomical directions first: Anatomical Left, Anatomical Right, Nose, Back of Head, Top of Brain, and Neck.");
+        resetLandmarkProbabilities();
+        return;
+    }
+
+    const directionVectors = getAnatomicalDirectionVectors();
+    const graphBounds = getGraphBounds();
+    const degreeMap = getNodeDegreeMap();
+    landmarkProbabilitiesByNode = {};
+
+    nodeMeshes.forEach(node => {
+        landmarkProbabilitiesByNode[node.id] = calculateLandmarkProbabilityForNode(node, degreeMap, directionVectors, graphBounds);
+    });
+
+    landmarkHelpActive = true;
+    setLandmarkHelperButtonState();
+}
+
+function restoreLandmarkDropdown() {
+    getDropdownLabelOptions().forEach(({ option, labelText }) => {
+        option.text = labelText;
+    });
+    dropdownMenu.style.display = '';
+    landmarkProbabilityList.innerHTML = '';
+    landmarkProbabilityList.classList.remove('visible');
+}
+
+function createLandmarkProbabilityOption(option, labelText, probability, selectedLabelText) {
+    const probabilityButton = document.createElement('button');
+    probabilityButton.type = 'button';
+    probabilityButton.className = 'landmark-probability-option';
+    probabilityButton.classList.toggle('selected', labelText === selectedLabelText);
+    probabilityButton.dataset.optionValue = option.value;
+
+    const percentageBadge = document.createElement('span');
+    percentageBadge.className = 'landmark-probability-percent';
+    percentageBadge.textContent = `${Math.round(probability * 100)}%`;
+
+    const labelName = document.createElement('span');
+    labelName.className = 'landmark-probability-name';
+    labelName.textContent = labelText;
+
+    probabilityButton.appendChild(percentageBadge);
+    probabilityButton.appendChild(labelName);
+    probabilityButton.addEventListener('click', () => {
+        dropdownMenu.value = option.value;
+        landmarkProbabilityList.querySelectorAll('.landmark-probability-option').forEach(button => {
+            button.classList.remove('selected');
+        });
+        probabilityButton.classList.add('selected');
+    });
+
+    return probabilityButton;
+}
+
+function updateLandmarkDropdownForNode(nodeId, currentLabelText = "Undefined") {
+    restoreLandmarkDropdown();
+    const probabilities = landmarkHelpActive ? landmarkProbabilitiesByNode[nodeId] : null;
+    const options = getDropdownLabelOptions();
+
+    if (probabilities) {
+        options.sort((firstOption, secondOption) => {
+            return (probabilities[secondOption.labelText] || 0) - (probabilities[firstOption.labelText] || 0);
+        });
+
+        options.forEach(({ option, labelText }) => {
+            const probability = probabilities[labelText] || 0;
+            dropdownMenu.appendChild(option);
+            landmarkProbabilityList.appendChild(createLandmarkProbabilityOption(option, labelText, probability, currentLabelText));
+        });
+        dropdownMenu.style.display = 'none';
+        landmarkProbabilityList.classList.add('visible');
+    }
+
+    const matchingOption = options.find(({ labelText }) => labelText === currentLabelText);
+    dropdownMenu.value = matchingOption ? matchingOption.option.value : "0";
 }
 
 // Babylon.js GUI for Labels
@@ -478,6 +805,7 @@ function updateLabelList(nodeId, labelText) {
 }
 
 function clearGraphScene() {
+    resetLandmarkProbabilities();
     resetLabels();
     nodeMeshes.forEach(node => node.dispose());
     edgeMeshes.forEach(edge => edge.dispose());
@@ -521,6 +849,7 @@ function createGraph(data) {
 });
 
     updateHomeCameraFromNodes();
+    setLandmarkHelperButtonState();
 }
 
 
@@ -648,6 +977,10 @@ function loadLabelsFromJSON(data) {
         }
         updateAllAnatomyDirectionButtons();
     }
+
+    if (landmarkHelpActive) {
+        calculateLandmarkProbabilities();
+    }
 }
 
 //test chatgpt function for updating the available list of variables when loading some predone labels
@@ -702,6 +1035,10 @@ function resetLabels() {
 
     // Clear the label list in the UI
     document.getElementById('labelList').innerHTML = '';
+
+    if (landmarkHelpActive && nodeMeshes.length) {
+        calculateLandmarkProbabilities();
+    }
 }
 
 // Event listener for "Save Labels" button
@@ -828,6 +1165,14 @@ restartButton.addEventListener('click', () => {
     uploadModal.style.display = 'flex';
 });
 
+helpLandmarkButton.addEventListener('click', () => {
+    if (landmarkHelpActive) {
+        resetLandmarkProbabilities();
+    } else {
+        calculateLandmarkProbabilities();
+    }
+});
+
 // Function to initialize the scene
 function initializeScene() {
     // Show the upload modal when the website loads
@@ -837,8 +1182,8 @@ function initializeScene() {
 
 // Function to display the custom modal with the dropdown
 function showCustomModal(currentLabelText = "Undefined") {
-    const matchingOption = Array.from(dropdownMenu.options).find(option => option.text === currentLabelText);
-    dropdownMenu.value = matchingOption ? matchingOption.value : "0";
+    const nodeId = selectedNode ? selectedNode.id : null;
+    updateLandmarkDropdownForNode(nodeId, currentLabelText);
     customModal.style.display = 'flex'; // Show custom modal
 }
 
@@ -926,7 +1271,8 @@ function removeNodeLabel(nodeId, restoreAvailability = true) {
 
 document.getElementById('setLabelButton').addEventListener('click', () => {
     if (selectedNode) {
-        let labelText = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex].text;
+        let selectedOption = document.getElementById('nodeLabel').options[document.getElementById('nodeLabel').selectedIndex];
+        let labelText = getDropdownLabelText(selectedOption);
 
         // If the label is "Undefined"
         if (labelText === "Undefined") {
@@ -955,7 +1301,12 @@ document.getElementById('setLabelButton').addEventListener('click', () => {
             updateLabelList(selectedNode.id, labelText);
         }
 
+        if (landmarkHelpActive) {
+            calculateLandmarkProbabilities();
+        }
+
         selectedNode = null;  // Reset selected node after labeling
+        restoreLandmarkDropdown();
         hideCustomModal();  // Hide the custom modal after setting the label
     } else {
         alert("Please select a node first.");
@@ -1274,6 +1625,7 @@ function createGuide(meshData) {
     // Optionally scale and position the mesh
     // guideMesh.scaling = new BABYLON.Vector3(0.1, 0.1, 0.1);
     guideMesh.position = new BABYLON.Vector3(0, 0, 0);
+    setLandmarkHelperButtonState();
 }
 
 // Function to toggle the visibility of the guide
